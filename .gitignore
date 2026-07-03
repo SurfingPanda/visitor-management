@@ -22,3 +22,33 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# --- Project-specific: secrets & local artifacts (do not commit) ---
+
+# Every environment file except the shared template
+.env.*
+!.env.example
+
+# Keys, certificates and other credentials
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+oauth-*.key
+
+# Database dumps / local SQLite
+*.sql
+*.sqlite
+*.sqlite-journal
+
+# Backups & archives
+*.bak
+*.tmp
+*.zip
+*.tar
+*.tar.gz
+
+# Local dev screenshots / scratch images
+/public/images/Screenshot_*.png
+/public/images/ChatGPT Image*.png
