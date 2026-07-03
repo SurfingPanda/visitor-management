@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide the scrollbar chrome while keeping the element scrollable (used by the
+   sidebar nav so a long module list never shows a scrollbar). */
+@layer utilities {
+    .no-scrollbar {
+        -ms-overflow-style: none; /* IE / old Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+    .no-scrollbar::-webkit-scrollbar {
+        display: none; /* Chrome / Safari / WebKit */
+    }
+}
+
+/* Entrance reveal for dashboard sections — fade + rise on mount. Sections
+   stagger via inline animation-delay so the page assembles instead of popping
+   in flat. Backwards fill keeps each section hidden during its delay. */
+@keyframes dash-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@layer utilities {
+    .animate-dash-reveal {
+        animation: dash-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-dash-reveal {
+        animation: none;
+    }
+}
