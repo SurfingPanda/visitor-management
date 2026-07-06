@@ -26,7 +26,7 @@ class VisitorFactory extends Factory
             'company' => fake()->company(),
             'host' => fake()->name(),
             'purpose' => fake()->randomElement($purposes),
-            'badge_number' => 'V-'.fake()->unique()->numberBetween(1000, 9999),
+            'badge_number' => 'VIS-'.date('Y').'-'.str_pad((string) fake()->unique()->numberBetween(1, 999999999), 9, '0', STR_PAD_LEFT),
             'qr_token' => (string) \Illuminate\Support\Str::ulid(),
             'status' => 'expected',
             'checked_in_at' => null,

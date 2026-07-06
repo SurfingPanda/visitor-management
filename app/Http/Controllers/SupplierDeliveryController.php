@@ -61,7 +61,7 @@ class SupplierDeliveryController extends Controller
                     $d->supplier_name,
                     $d->plate_number,
                     $d->dr_number,
-                    $d->items->map(fn ($i) => $i->name.' x'.$i->quantity)->implode('; '),
+                    $d->items->map(fn ($i) => $i->name.' x'.$i->quantity.($i->uom ? ' '.$i->uom : ''))->implode('; '),
                     $d->items->sum('quantity'),
                     $d->received_by,
                     $this->statusLabel($d->status),
@@ -228,6 +228,7 @@ class SupplierDeliveryController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.name' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'items.*.uom' => ['nullable', 'string', 'max:50'],
         ]);
     }
 }

@@ -181,6 +181,7 @@ function DeliveryPrintSheet({ delivery }) {
                         <th className="num" style={{ width: '80px' }}>
                             Qty
                         </th>
+                        <th style={{ width: '90px' }}>UOM</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -188,6 +189,7 @@ function DeliveryPrintSheet({ delivery }) {
                         <tr key={it.id}>
                             <td>{it.name}</td>
                             <td className="num">{it.quantity}</td>
+                            <td>{it.uom || '—'}</td>
                         </tr>
                     ))}
                 </tbody>
@@ -195,6 +197,7 @@ function DeliveryPrintSheet({ delivery }) {
                     <tr>
                         <td>Total</td>
                         <td className="num">{totalQty}</td>
+                        <td />
                     </tr>
                 </tfoot>
             </table>
@@ -259,7 +262,14 @@ function Detail({ label, value, sub }) {
 const emptyItem = {
     name: '',
     quantity: 1,
+    uom: 'pcs',
 };
+
+// Common units of measure offered as autocomplete suggestions.
+const uomOptions = [
+    'pcs', 'box', 'pack', 'set', 'pair', 'dozen', 'roll',
+    'kg', 'g', 'L', 'mL', 'sack', 'bundle', 'ream', 'unit',
+];
 
 const emptyForm = {
     supplier_name: '',
@@ -310,7 +320,7 @@ function ItemsEditor({ form }) {
                         className="rounded-lg border border-gray-200 bg-gray-50/60 p-3"
                     >
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-                            <div className="sm:col-span-8">
+                            <div className="sm:col-span-6">
                                 <label className={subLabel}>
                                     Item / description
                                 </label>
@@ -329,7 +339,7 @@ function ItemsEditor({ form }) {
                                 />
                             </div>
 
-                            <div className="sm:col-span-3">
+                            <div className="sm:col-span-2">
                                 <label className={subLabel}>Quantity</label>
                                 <input
                                     type="number"
@@ -355,6 +365,24 @@ function ItemsEditor({ form }) {
                                 />
                             </div>
 
+                            <div className="sm:col-span-3">
+                                <label className={subLabel}>UOM</label>
+                                <input
+                                    type="text"
+                                    list="uom-options"
+                                    value={it.uom ?? ''}
+                                    onChange={(e) =>
+                                        updateItem(i, 'uom', e.target.value)
+                                    }
+                                    placeholder="pcs"
+                                    className={fieldClass}
+                                />
+                                <InputError
+                                    message={form.errors[`items.${i}.uom`]}
+                                    className="mt-1"
+                                />
+                            </div>
+
                             <div className="flex items-start sm:col-span-1 sm:pt-6">
                                 <button
                                     type="button"
@@ -373,6 +401,12 @@ function ItemsEditor({ form }) {
                     </div>
                 ))}
             </div>
+
+            <datalist id="uom-options">
+                {uomOptions.map((u) => (
+                    <option key={u} value={u} />
+                ))}
+            </datalist>
 
             {typeof form.errors.items === 'string' && (
                 <InputError message={form.errors.items} className="mt-1" />
@@ -568,6 +602,7 @@ export default function SupplierDeliveriesIndex({
                     ? item.items.map((it) => ({
                           name: it.name ?? '',
                           quantity: it.quantity ?? 0,
+                          uom: it.uom ?? '',
                       }))
                     : [{ ...emptyItem }],
         });
@@ -1032,6 +1067,7 @@ export default function SupplierDeliveriesIndex({
                                                     <th className="px-4 py-2.5 text-right">
                                                         Qty
                                                     </th>
+                                                    <th className="px-4 py-2.5">UOM</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-50">
@@ -1042,6 +1078,9 @@ export default function SupplierDeliveriesIndex({
                                                         </td>
                                                         <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">
                                                             {it.quantity}
+                                                        </td>
+                                                        <td className="px-4 py-2.5 text-gray-500">
+                                                            {it.uom || '—'}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1059,6 +1098,7 @@ export default function SupplierDeliveriesIndex({
                                                             0,
                                                         )}
                                                     </td>
+                                                    <td className="px-4 py-2.5" />
                                                 </tr>
                                             </tfoot>
                                         </table>

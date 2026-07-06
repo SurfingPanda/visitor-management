@@ -191,7 +191,7 @@ class VisitorController extends Controller
         ]);
 
         $visitor->update([
-            'badge_number' => 'V-'.str_pad((string) $visitor->id, 4, '0', STR_PAD_LEFT),
+            'badge_number' => 'VIS-'.date('Y').'-'.str_pad((string) $visitor->id, 9, '0', STR_PAD_LEFT),
         ]);
 
         // Arrival photos belong to the visit, so they are only kept when the

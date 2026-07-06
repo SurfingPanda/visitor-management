@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\DeliveryLog;
+use App\Models\Driver;
+use App\Models\Equipment;
 use App\Models\IncidentReport;
 use App\Models\ScrapDisposal;
 use App\Models\SupplierDelivery;
 use App\Models\SupplierDeliveryItem;
+use App\Models\Trip;
 use App\Models\Visit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -201,6 +204,141 @@ class ReportController extends Controller
                 ->get(),
         ];
 
+        // ---- Drivers (snapshot roster + trips within range by departure) ----
+        $driverStatus = Driver::selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        $tripBase = fn () => Trip::whereBetween('departure_at', [$from, $to]);
+        $tripStatus = (clone $tripBase())
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
+
+        // Delivery-log accountability (crates out vs returned) attributed to the
+        // person who actually drove the run — reuses the returned deliveries and
+        // item keys resolved in the Delivery Log block above.
+        $itemLabels = [
+            'crates_big' => 'Big crates',
+            'crates_small' => 'Small crates',
+            'box' => 'Boxes',
+            'bin' => 'Bins',
+            'empanada_box' => 'Empanada boxes',
+            'trolley' => 'Trolleys',
+        ];
+
+        $shortByDriver = [];   // name => ['driver','missing','trips','routes'=>[]]
+        $shortageRows = [];    // one row per shorted delivery, most-missing first
+        $totalOutItems = 0;
+        $totalReturnedItems = 0;
+        foreach ($returnedDeliveries as $d) {
+            $short = 0;
+            $parts = [];
+            foreach ($itemKeys as $k) {
+                $out = (int) $d->{$k};
+                $ret = (int) $d->{"ret_{$k}"};
+                $totalOutItems += $out;
+                $totalReturnedItems += min($out, $ret);
+                $miss = max(0, $out - $ret);
+                if ($miss > 0) {
+                    $short += $miss;
+                    $parts[] = $miss.' '.$itemLabels[$k];
+                }
+            }
+            if ($short <= 0) {
+                continue;
+            }
+
+            $name = trim((string) $d->driver) ?: 'Unassigned';
+            $route = trim((string) $d->route) ?: 'Unspecified';
+
+            if (! isset($shortByDriver[$name])) {
+                $shortByDriver[$name] = ['driver' => $name, 'missing' => 0, 'trips' => 0, 'routes' => []];
+            }
+            $shortByDriver[$name]['missing'] += $short;
+            $shortByDriver[$name]['trips']++;
+            $shortByDriver[$name]['routes'][$route] = true;
+
+            $shortageRows[] = [
+                'driver' => $name,
+                'route' => $route,
+                'date' => optional($d->returned_at ?? $d->delivery_out)?->toDateString(),
+                'missing' => $short,
+                'items' => implode(', ', $parts),
+                'remarks' => $d->returned_remarks,
+            ];
+        }
+
+        $missingByDriver = collect($shortByDriver)
+            ->map(fn ($r) => [
+                'driver' => $r['driver'],
+                'missing' => $r['missing'],
+                'trips' => $r['trips'],
+                'routes' => implode(', ', array_keys($r['routes'])),
+            ])
+            ->sortByDesc('missing')
+            ->values();
+
+        $shortageRows = collect($shortageRows)->sortByDesc('missing')->values();
+
+        $returnRate = $totalOutItems > 0
+            ? (int) round($totalReturnedItems / $totalOutItems * 100)
+            : null;
+
+        $driver = [
+            'total' => Driver::count(),
+            'active' => (int) ($driverStatus['active'] ?? 0),
+            'inactive' => (int) ($driverStatus['inactive'] ?? 0),
+            'trips' => (clone $tripBase())->count(),
+            'top_drivers' => (clone $tripBase())
+                ->selectRaw('COALESCE(NULLIF(driver_name, ""), "Unassigned") as label, COUNT(*) as count')
+                ->groupBy('label')
+                ->orderByDesc('count')
+                ->limit(8)
+                ->get(),
+            'trips_by_status' => collect(['scheduled', 'ongoing', 'completed', 'cancelled'])
+                ->map(fn ($s) => ['label' => ucfirst($s), 'count' => (int) ($tripStatus[$s] ?? 0)])
+                ->filter(fn ($row) => $row['count'] > 0)
+                ->values(),
+
+            // Delivery-log accountability
+            'deliveries' => (clone $deliveryBase())->count(),
+            'missing_items' => $missingItems,
+            'short_drivers' => $missingByDriver->count(),
+            'return_rate' => $returnRate,
+            'top_routes' => (clone $deliveryBase())
+                ->selectRaw('COALESCE(NULLIF(route, ""), "Unspecified") as label, COUNT(*) as count')
+                ->groupBy('label')
+                ->orderByDesc('count')
+                ->limit(8)
+                ->get(),
+            'missing_by_driver' => $missingByDriver,
+            'shortages' => $shortageRows,
+        ];
+
+        // ---- Equipment Inventory (current snapshot; disposals by disposal date) ----
+        $inStock = Equipment::where('status', 'in_stock');
+        $equipment = [
+            'skus' => Equipment::count(),
+            'in_stock_units' => (int) (clone $inStock)->sum('quantity'),
+            'stock_value' => (float) Equipment::where('status', 'in_stock')
+                ->selectRaw('COALESCE(SUM(price * quantity), 0) as v')
+                ->value('v'),
+            'disposed' => Equipment::where('status', 'disposed')
+                ->whereBetween('disposed_at', [$from, $to])
+                ->count(),
+            'by_status' => Equipment::selectRaw("CASE status WHEN 'in_stock' THEN 'In stock' WHEN 'disposed' THEN 'Disposed' ELSE status END as label, COUNT(*) as count")
+                ->groupBy('status')
+                ->orderByDesc('count')
+                ->get(),
+            'top_items' => Equipment::where('status', 'in_stock')
+                ->selectRaw('name as label, SUM(quantity) as count')
+                ->groupBy('name')
+                ->orderByDesc('count')
+                ->limit(8)
+                ->get(),
+        ];
+
         return Inertia::render('Reports/Index', [
             'filters' => [
                 'from' => $from->toDateString(),
@@ -219,6 +357,8 @@ class ReportController extends Controller
             'incidents' => $incidents,
             'supplier' => $supplier,
             'scrap' => $scrap,
+            'driver' => $driver,
+            'equipment' => $equipment,
         ]);
     }
 

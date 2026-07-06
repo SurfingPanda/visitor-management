@@ -11,6 +11,7 @@ class SupplierDeliveryItem extends Model
         'supplier_delivery_id',
         'name',
         'quantity',
+        'uom',
     ];
 
     protected function casts(): array

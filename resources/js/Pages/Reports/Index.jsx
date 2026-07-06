@@ -46,6 +46,8 @@ const I = {
     peak: <path d="M3 3v18h18M7 14l3-4 3 3 5-7" />,
     truck: <><path d="M10 17h4V5H2v12h3" /><path d="M14 8h4l4 4v5h-3" /><circle cx="7.5" cy="17.5" r="2" /><circle cx="17.5" cy="17.5" r="2" /></>,
     box: <><path d="M21 8 12 3 3 8l9 5 9-5Z" /><path d="M3 8v8l9 5 9-5V8" /><path d="M12 13v8" /></>,
+    wheel: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /><path d="M12 3v6M12 15v6M3 12h6M15 12h6" /></>,
+    route: <><circle cx="6" cy="19" r="2" /><circle cx="18" cy="5" r="2" /><path d="M8 19h6a4 4 0 0 0 0-8H10a4 4 0 0 1 0-8h6" /></>,
     alert: <><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" /><path d="M12 9v4M12 17h.01" /></>,
     check: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="m22 4-10 10.01-3-3" /></>,
     trash: <><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></>,
@@ -110,10 +112,108 @@ function Panel({ title, subtitle, children }) {
     );
 }
 
+/* Ranked list of drivers who returned short — worst offender highlighted. */
+function MissingDriverList({ rows }) {
+    if (!rows || rows.length === 0) {
+        return (
+            <p className="py-6 text-center text-sm text-gray-400">
+                No missing containers in this range. 🎉
+            </p>
+        );
+    }
+    const max = Math.max(...rows.map((r) => r.missing), 1);
+    return (
+        <ul className="space-y-3">
+            {rows.map((r, i) => (
+                <li key={r.driver}>
+                    <div className="flex items-baseline justify-between gap-3">
+                        <span className="truncate text-sm font-semibold text-gray-800">
+                            {i === 0 && <span className="mr-1">⚠️</span>}
+                            {r.driver}
+                        </span>
+                        <span className="shrink-0 text-sm font-bold text-rose-600">
+                            {r.missing} missing
+                        </span>
+                    </div>
+                    <div className="mt-1 h-2 rounded-full bg-gray-100">
+                        <div
+                            className="h-2 rounded-full bg-rose-500"
+                            style={{ width: `${(r.missing / max) * 100}%` }}
+                        />
+                    </div>
+                    <p className="mt-1 truncate text-xs text-gray-400">
+                        {r.trips} short run{r.trips === 1 ? '' : 's'}
+                        {r.routes ? ` · ${r.routes}` : ''}
+                    </p>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+/* Per-delivery breakdown of what came back short. */
+function ShortageTable({ rows }) {
+    if (!rows || rows.length === 0) {
+        return (
+            <p className="py-6 text-center text-sm text-gray-400">
+                No return shortages recorded in this range.
+            </p>
+        );
+    }
+    return (
+        <div className="-mx-2 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+                <thead>
+                    <tr className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-400">
+                        <th className="px-2 py-2 font-medium">Driver</th>
+                        <th className="px-2 py-2 font-medium">Route</th>
+                        <th className="px-2 py-2 font-medium">Returned</th>
+                        <th className="px-2 py-2 font-medium">Missing</th>
+                        <th className="px-2 py-2 font-medium">Items</th>
+                        <th className="px-2 py-2 font-medium">Remarks</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                    {rows.map((r, i) => (
+                        <tr key={i} className="align-top">
+                            <td className="px-2 py-2 font-semibold text-gray-800">
+                                {r.driver}
+                            </td>
+                            <td className="px-2 py-2 text-gray-600">{r.route}</td>
+                            <td className="whitespace-nowrap px-2 py-2 text-gray-500">
+                                {formatDay(r.date)}
+                            </td>
+                            <td className="px-2 py-2">
+                                <span className="inline-flex rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">
+                                    {r.missing}
+                                </span>
+                            </td>
+                            <td className="px-2 py-2 text-gray-600">{r.items}</td>
+                            <td className="px-2 py-2 text-gray-400">
+                                {r.remarks || '—'}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
 const presets = [
     { label: '7 days', days: 6 },
     { label: '30 days', days: 29 },
     { label: '90 days', days: 89 },
+];
+
+const reportTabs = [
+    { key: 'visitors', label: 'Visitor', dot: 'bg-indigo-500' },
+    { key: 'delivery', label: 'Delivery', dot: 'bg-sky-500' },
+    { key: 'supplier', label: 'Supplier Delivery', dot: 'bg-green-500' },
+    { key: 'driver', label: 'Driver', dot: 'bg-cyan-500' },
+    { key: 'equipment', label: 'Equipment Inventory', dot: 'bg-violet-500' },
+    { key: 'scrap', label: 'Scrap Disposal', dot: 'bg-amber-500' },
+    { key: 'incidents', label: 'Incident & Accident', dot: 'bg-rose-500' },
 ];
 
 /* ---------- page ---------- */
@@ -128,9 +228,12 @@ export default function ReportsIndex({
     incidents,
     supplier,
     scrap,
+    driver,
+    equipment,
 }) {
     const [from, setFrom] = useState(filters.from);
     const [to, setTo] = useState(filters.to);
+    const [report, setReport] = useState('visitors');
 
     const apply = (nextFrom = from, nextTo = to) => {
         router.get(
@@ -230,7 +333,31 @@ export default function ReportsIndex({
                     </a>
                 </div>
 
+                {/* Report filter */}
+                <div className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
+                    {reportTabs.map((t) => {
+                        const active = report === t.key;
+                        return (
+                            <button
+                                key={t.key}
+                                type="button"
+                                onClick={() => setReport(t.key)}
+                                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition ${
+                                    active
+                                        ? 'bg-gray-900 text-white shadow-sm'
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                }`}
+                            >
+                                <span className={`h-2 w-2 rounded-full ${t.dot}`} />
+                                {t.label}
+                            </button>
+                        );
+                    })}
+                </div>
+
                 {/* ============ VISITORS ============ */}
+                {report === 'visitors' && (
+                  <>
                 <SectionTitle>Visitors</SectionTitle>
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -274,7 +401,12 @@ export default function ReportsIndex({
                     </Panel>
                 </div>
 
+                  </>
+                )}
+
                 {/* ============ SUPPLIER DELIVERY ============ */}
+                {report === 'supplier' && (
+                  <>
                 <SectionTitle tone="bg-green-500">Supplier Delivery</SectionTitle>
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -299,7 +431,12 @@ export default function ReportsIndex({
                     </Panel>
                 </div>
 
+                  </>
+                )}
+
                 {/* ============ DELIVERY LOG ============ */}
+                {report === 'delivery' && (
+                  <>
                 <SectionTitle tone="bg-sky-500">Delivery Log</SectionTitle>
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -326,7 +463,12 @@ export default function ReportsIndex({
                     />
                 </Panel>
 
+                  </>
+                )}
+
                 {/* ============ SCRAP DISPOSAL ============ */}
+                {report === 'scrap' && (
+                  <>
                 <SectionTitle tone="bg-amber-500">Scrap Disposal</SectionTitle>
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -362,7 +504,137 @@ export default function ReportsIndex({
                     </Panel>
                 </div>
 
+                  </>
+                )}
+
+                {/* ============ DRIVER ============ */}
+                {report === 'driver' && (
+                  <>
+                <SectionTitle tone="bg-cyan-500">Driver Reports</SectionTitle>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard label="Total drivers" value={driver.total} icon={I.id} tone="sky" />
+                    <StatCard label="Active" value={driver.active} icon={I.check} tone="green" />
+                    <StatCard label="Inactive" value={driver.inactive} icon={I.clock} tone="gray" />
+                    <StatCard
+                        label="Trips in range"
+                        value={driver.trips}
+                        sub={rangeLabel}
+                        icon={I.route}
+                        tone="indigo"
+                    />
+                </div>
+
+                <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard label="Deliveries logged" value={driver.deliveries} icon={I.truck} tone="sky" />
+                    <StatCard
+                        label="Missing items"
+                        value={driver.missing_items}
+                        sub={
+                            driver.short_drivers > 0
+                                ? `${driver.short_drivers} driver${driver.short_drivers === 1 ? '' : 's'} short on return`
+                                : 'All returns complete'
+                        }
+                        icon={I.alert}
+                        tone="rose"
+                    />
+                    <StatCard
+                        label="Crate return rate"
+                        value={driver.return_rate === null ? '—' : `${driver.return_rate}%`}
+                        sub={driver.return_rate === null ? 'No returned runs' : 'Items returned vs sent out'}
+                        icon={I.check}
+                        tone="green"
+                    />
+                    <StatCard
+                        label="Drivers with shortages"
+                        value={driver.short_drivers}
+                        icon={I.wheel}
+                        tone="amber"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <Panel title="Top drivers" subtitle="By trips dispatched in range">
+                        <RankedBar
+                            items={driver.top_drivers}
+                            empty="No trips in this range."
+                        />
+                    </Panel>
+                    <Panel title="Trips by status">
+                        <CategoryDoughnut
+                            items={driver.trips_by_status}
+                            empty="No trips in this range."
+                        />
+                    </Panel>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <Panel title="Most used routes" subtitle="Delivery runs by route">
+                        <RankedBar
+                            items={driver.top_routes}
+                            empty="No deliveries in this range."
+                        />
+                    </Panel>
+                    <Panel
+                        title="Missing crates by driver"
+                        subtitle="Drivers who returned short on containers"
+                    >
+                        <MissingDriverList rows={driver.missing_by_driver} />
+                    </Panel>
+                </div>
+
+                <Panel
+                    title="Return shortages"
+                    subtitle="Every delivery that came back with missing containers"
+                >
+                    <ShortageTable rows={driver.shortages} />
+                </Panel>
+                  </>
+                )}
+
+                {/* ============ EQUIPMENT INVENTORY ============ */}
+                {report === 'equipment' && (
+                  <>
+                <SectionTitle tone="bg-violet-500">Equipment Inventory Reports</SectionTitle>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    <StatCard label="Item types" value={equipment.skus} icon={I.box} tone="indigo" />
+                    <StatCard label="Units in stock" value={equipment.in_stock_units} icon={I.scale} tone="sky" />
+                    <StatCard
+                        label="Stock value"
+                        value={formatPeso(equipment.stock_value)}
+                        icon={I.peso}
+                        tone="green"
+                    />
+                    <StatCard
+                        label="Disposed in range"
+                        value={equipment.disposed}
+                        sub={rangeLabel}
+                        icon={I.trash}
+                        tone="amber"
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <Panel title="By status">
+                        <CategoryDoughnut
+                            items={equipment.by_status}
+                            empty="No equipment recorded."
+                        />
+                    </Panel>
+                    <Panel title="Top items in stock" subtitle="By quantity on hand">
+                        <RankedBar
+                            items={equipment.top_items}
+                            empty="No equipment in stock."
+                        />
+                    </Panel>
+                </div>
+                  </>
+                )}
+
                 {/* ============ INCIDENT & ACCIDENT ============ */}
+                {report === 'incidents' && (
+                  <>
                 <SectionTitle tone="bg-rose-500">
                     Incident &amp; Accident Reports
                 </SectionTitle>
@@ -400,6 +672,8 @@ export default function ReportsIndex({
                         />
                     </Panel>
                 </div>
+                  </>
+                )}
             </div>
         </AuthenticatedLayout>
     );

@@ -200,7 +200,7 @@
                         <td>{{ $d->dr_number ?: '—' }}</td>
                         <td>
                             @foreach ($d->items as $it)
-                                <div class="item-line">{{ $it->name }} <span class="muted">x{{ $it->quantity }}</span></div>
+                                <div class="item-line">{{ $it->name }} <span class="muted">x{{ $it->quantity }}{{ $it->uom ? ' '.$it->uom : '' }}</span></div>
                             @endforeach
                         </td>
                         <td class="num">{{ $d->items->sum('quantity') }}</td>
