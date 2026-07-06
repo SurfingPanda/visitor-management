@@ -240,22 +240,13 @@ function Sidebar({ onNavigate, isAdmin, modules = [], collapsed = false }) {
             {/* Brand */}
             <div
                 className={
-                    'flex h-16 shrink-0 items-center gap-2 ' +
-                    (collapsed ? 'justify-center px-2' : 'px-5')
+                    'flex h-16 shrink-0 items-center justify-center gap-2 ' +
+                    (collapsed ? 'px-2' : 'px-5')
                 }
             >
-                <span className="flex h-9 shrink-0 items-center justify-center">
-                    <img
-                        src="/logo_main.webp"
-                        alt="ECSecora"
-                        className="h-6 w-auto"
-                    />
+                <span className="text-lg font-bold tracking-tight text-white">
+                    ECSecora
                 </span>
-                {!collapsed && (
-                    <span className="text-lg font-bold tracking-tight text-white">
-                        ECSecora
-                    </span>
-                )}
             </div>
 
             {/* Nav */}
