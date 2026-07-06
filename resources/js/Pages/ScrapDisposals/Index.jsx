@@ -73,7 +73,7 @@ function formatDate(value) {
     });
 }
 
-function Detail({ label, value }) {
+function Detail({ label, value, sub }) {
     const empty = value === null || value === undefined || value === '';
     return (
         <div>
@@ -83,9 +83,18 @@ function Detail({ label, value }) {
             <dd className="mt-0.5 text-sm font-medium text-gray-800">
                 {empty ? '—' : value}
             </dd>
+            {sub && <dd className="text-xs text-gray-400">{sub}</dd>}
         </div>
     );
 }
+
+// Recycle glyph for the disposal view-modal hero header.
+const RecycleGlyph = (
+    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 19H4.8a2 2 0 0 1-1.7-3l1.3-2.2M7.5 4.2 8.6 2.3a2 2 0 0 1 3.4 0l2 3.4" />
+        <path d="M13.5 21h4.7a2 2 0 0 0 1.7-3l-1.3-2.2M8.3 8.5 5.6 7 4 9.8M19.7 12.5 22 14l-1.6 2.8M9 21l2.5-1.5L10 17" />
+    </svg>
+);
 
 const emptyItem = { name: '', quantity: 1, uom: '' };
 
@@ -736,90 +745,132 @@ export default function ScrapDisposalsIndex({
             {/* View modal */}
             <Modal show={!!viewing} onClose={() => setViewing(null)} maxWidth="2xl">
                 {viewing && (
-                    <div className="p-6">
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                                <h2 className="text-xl font-bold text-gray-900">
-                                    {disposalTitle(viewing)}
-                                </h2>
-                                {(viewing.reference_no || viewing.category) && (
-                                    <p className="mt-0.5 text-sm text-gray-500">
-                                        {[viewing.reference_no, viewing.category]
-                                            .filter(Boolean)
-                                            .join(' · ')}
-                                    </p>
-                                )}
+                    <div className="flex max-h-[calc(100vh-3rem)] flex-col">
+                        {/* Hero header */}
+                        <div className="shrink-0 bg-gradient-to-br from-amber-500 to-amber-600 px-6 py-5">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/25">
+                                        {RecycleGlyph}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h2 className="truncate text-xl font-bold text-white">
+                                            {disposalTitle(viewing)}
+                                        </h2>
+                                        <p className="mt-0.5 truncate text-sm text-amber-100">
+                                            {[viewing.reference_no, viewing.category]
+                                                .filter(Boolean)
+                                                .join(' · ') || 'No reference'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-white/25">
+                                    {methodLabels[viewing.method] ?? viewing.method}
+                                </span>
                             </div>
-                            <MethodBadge method={viewing.method} />
                         </div>
 
-                        {viewing.items?.length > 0 && (
-                            <div className="mt-6 overflow-hidden rounded-xl border border-gray-100">
-                                <table className="min-w-full divide-y divide-gray-100 text-sm">
-                                    <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                        <tr>
-                                            <th className="px-4 py-2.5">Item</th>
-                                            <th className="px-4 py-2.5 text-right">Qty</th>
-                                            <th className="px-4 py-2.5">UOM</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-50">
-                                        {viewing.items.map((it) => (
-                                            <tr key={it.id}>
-                                                <td className="px-4 py-2.5 font-medium text-gray-800">
-                                                    {it.name}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">
-                                                    {it.quantity}
-                                                </td>
-                                                <td className="px-4 py-2.5 text-gray-500">
-                                                    {it.uom || '—'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot className="border-t border-gray-100 bg-gray-50/60">
-                                        <tr>
-                                            <td className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                                Total
-                                            </td>
-                                            <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-gray-800">
-                                                {itemsTotal(viewing)}
-                                            </td>
-                                            <td className="px-4 py-2.5" />
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {/* Amount recovered highlight */}
+                            <div className="rounded-xl border border-gray-100 bg-gray-50/70 p-4">
+                                <div className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                    Amount recovered
+                                </div>
+                                <div className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
+                                    {formatAmount(viewing.amount)}
+                                </div>
                             </div>
-                        )}
 
-                        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                            <Detail
-                                label="Method"
-                                value={methodLabels[viewing.method] ?? viewing.method}
-                            />
-                            <Detail
-                                label="Disposal date"
-                                value={
-                                    viewing.disposal_date
-                                        ? formatDate(viewing.disposal_date)
-                                        : null
-                                }
-                            />
-                            <Detail label="Buyer / hauler" value={viewing.recipient} />
-                            <Detail
-                                label="Amount recovered"
-                                value={formatAmount(viewing.amount)}
-                            />
-                            <Detail label="Reference no." value={viewing.reference_no} />
-                            <Detail label="Notes" value={viewing.notes} />
-                            <Detail
-                                label="Logged"
-                                value={formatDate(viewing.created_at)}
-                            />
-                        </dl>
+                            {/* Items */}
+                            {viewing.items?.length > 0 && (
+                                <div className="mt-6">
+                                    <div className="mb-2 flex items-center gap-2">
+                                        <h3 className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                                            Items
+                                        </h3>
+                                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                                            {viewing.items.length}
+                                        </span>
+                                    </div>
+                                    <div className="overflow-hidden rounded-xl border border-gray-100">
+                                        <table className="min-w-full divide-y divide-gray-100 text-sm">
+                                            <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                <tr>
+                                                    <th className="px-4 py-2.5">Item</th>
+                                                    <th className="px-4 py-2.5 text-right">
+                                                        Qty
+                                                    </th>
+                                                    <th className="px-4 py-2.5">UOM</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-gray-50">
+                                                {viewing.items.map((it) => (
+                                                    <tr key={it.id}>
+                                                        <td className="px-4 py-2.5 font-medium text-gray-800">
+                                                            {it.name}
+                                                        </td>
+                                                        <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">
+                                                            {it.quantity}
+                                                        </td>
+                                                        <td className="px-4 py-2.5 text-gray-500">
+                                                            {it.uom || '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot className="border-t border-gray-100 bg-gray-50/60">
+                                                <tr>
+                                                    <td className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                        Total
+                                                    </td>
+                                                    <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-gray-800">
+                                                        {itemsTotal(viewing)}
+                                                    </td>
+                                                    <td className="px-4 py-2.5" />
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
 
-                        <div className="mt-6 flex justify-end gap-3">
+                            {/* Details */}
+                            <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+                                <Detail
+                                    label="Method"
+                                    value={methodLabels[viewing.method] ?? viewing.method}
+                                />
+                                <Detail
+                                    label="Disposal date"
+                                    value={
+                                        viewing.disposal_date
+                                            ? formatDate(viewing.disposal_date)
+                                            : null
+                                    }
+                                />
+                                <Detail
+                                    label="Buyer / hauler"
+                                    value={viewing.recipient}
+                                />
+                                <Detail
+                                    label="Reference no."
+                                    value={viewing.reference_no}
+                                />
+                                <Detail label="Category" value={viewing.category} />
+                                <Detail label="Notes" value={viewing.notes} />
+                                <Detail
+                                    label="Logged"
+                                    value={formatDate(viewing.created_at)}
+                                    sub={
+                                        viewing.recorder_name
+                                            ? `by ${viewing.recorder_name}`
+                                            : null
+                                    }
+                                />
+                            </dl>
+                        </div>
+
+                        <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-6 py-4">
                             <button
                                 type="button"
                                 onClick={() => {
