@@ -20,6 +20,27 @@ const methodLabels = {
     discarded: 'Discarded',
 };
 
+// Selectable units for a scrap disposal. Unit is optional; legacy/custom
+// values not in this list are preserved as an extra option when editing.
+const UNITS = [
+    'kg',
+    'g',
+    'ton',
+    'lbs',
+    'pcs',
+    'sacks',
+    'boxes',
+    'drums',
+    'rolls',
+    'bundles',
+    'pallets',
+    'liters',
+    'gallons',
+    'meters',
+    'sets',
+    'units',
+];
+
 function MethodBadge({ method }) {
     return (
         <span
@@ -149,13 +170,21 @@ function DisposalFields({ form, methods }) {
 
             <div>
                 <label className={label}>Unit</label>
-                <input
-                    type="text"
+                <select
                     value={form.data.unit}
                     onChange={(e) => form.setData('unit', e.target.value)}
-                    placeholder="e.g. kg, pcs, sacks"
                     className={field}
-                />
+                >
+                    <option value="">Select unit</option>
+                    {form.data.unit && !UNITS.includes(form.data.unit) && (
+                        <option value={form.data.unit}>{form.data.unit}</option>
+                    )}
+                    {UNITS.map((u) => (
+                        <option key={u} value={u}>
+                            {u}
+                        </option>
+                    ))}
+                </select>
                 <InputError message={form.errors.unit} className="mt-1" />
             </div>
 

@@ -1,7 +1,8 @@
 import InputError from '@/Components/InputError';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -11,6 +12,8 @@ export default function Login({ status, canResetPassword }) {
     });
 
     const [showPassword, setShowPassword] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
+    const [googleError, setGoogleError] = useState(null);
 
     const submit = (e) => {
         e.preventDefault();
@@ -18,6 +21,54 @@ export default function Login({ status, canResetPassword }) {
         post(route('login'), {
             onFinish: () => reset('password'),
         });
+    };
+
+    // After Google redirects back, the Supabase SDK has parsed the session from
+    // the URL. Hand its access token to Laravel to establish a real session.
+    useEffect(() => {
+        if (!supabase) return;
+        let active = true;
+
+        (async () => {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData?.session?.access_token;
+            if (!token || !active) return;
+
+            setGoogleLoading(true);
+            router.post(
+                route('auth.supabase'),
+                { access_token: token },
+                {
+                    onError: () => setGoogleLoading(false),
+                    // Clear the local Supabase session — the Laravel session is
+                    // authoritative now, and this prevents a re-post loop.
+                    onFinish: () => supabase.auth.signOut(),
+                },
+            );
+        })();
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    const signInWithGoogle = async () => {
+        setGoogleError(null);
+        if (!supabase) {
+            setGoogleError('Google sign-in is not configured.');
+            return;
+        }
+
+        setGoogleLoading(true);
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: `${window.location.origin}/login` },
+        });
+
+        if (error) {
+            setGoogleError(error.message);
+            setGoogleLoading(false);
+        }
     };
 
     return (
@@ -191,6 +242,45 @@ export default function Login({ status, canResetPassword }) {
                     {processing ? 'Signing in…' : 'Sign in'}
                 </button>
             </form>
+
+            {/* Divider */}
+            <div className="mt-6 flex items-center gap-3">
+                <span className="h-px flex-1 bg-gray-200" />
+                <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                    or
+                </span>
+                <span className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            {/* Google */}
+            <button
+                type="button"
+                onClick={signInWithGoogle}
+                disabled={googleLoading}
+                className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"
+                    />
+                    <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
+                    />
+                    <path
+                        fill="#FBBC05"
+                        d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"
+                    />
+                    <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38Z"
+                    />
+                </svg>
+                {googleLoading ? 'Signing in…' : 'Sign in with Google'}
+            </button>
+
+            <InputError message={googleError} className="mt-2" />
 
             <p className="mt-8 text-center text-xs text-gray-400">
                 Authorized personnel only · Contact an administrator for access

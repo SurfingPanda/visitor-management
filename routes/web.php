@@ -51,6 +51,7 @@ Route::middleware(['auth', 'verified', 'module.access'])->group(function () {
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
     Route::get('/incident-reports', [IncidentReportController::class, 'index'])->name('incident-reports.index');
+    Route::get('/incident-reports/template', [IncidentReportController::class, 'template'])->name('incident-reports.template');
     Route::post('/incident-reports', [IncidentReportController::class, 'store'])->name('incident-reports.store');
     Route::patch('/incident-reports/{incidentReport}', [IncidentReportController::class, 'update'])->name('incident-reports.update');
 
