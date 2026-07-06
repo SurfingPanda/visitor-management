@@ -27,15 +27,15 @@ export default function Login({ status, canResetPassword }) {
             {/* Brand */}
             <div className="flex flex-col items-center">
                 <img
-                    src="/logo_main.webp"
-                    alt="ECSecora"
-                    className="h-16 w-auto"
+                    src="/images/secora-logo.png"
+                    alt="Secora"
+                    className="h-20 w-auto"
                 />
                 <h1 className="mt-5 text-2xl font-bold tracking-tight text-gray-900">
                     Welcome back
                 </h1>
                 <p className="mt-1 text-sm text-gray-500">
-                    Sign in to ECSecora
+                    Sign in to Secora
                 </p>
             </div>
 

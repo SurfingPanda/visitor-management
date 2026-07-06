@@ -39,7 +39,7 @@ export default function Badge({ visitor }) {
                                 </svg>
                             </span>
                             <span className="text-sm font-bold tracking-wide">
-                                ECSecora
+                                Secora
                             </span>
                         </div>
                         <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-widest">

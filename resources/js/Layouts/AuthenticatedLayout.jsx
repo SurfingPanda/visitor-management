@@ -245,7 +245,7 @@ function Sidebar({ onNavigate, isAdmin, modules = [], collapsed = false }) {
                 }
             >
                 <span className="text-lg font-bold tracking-tight text-white">
-                    ECSecora
+                    Secora
                 </span>
             </div>
 
@@ -438,7 +438,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         Log out
                     </h2>
                     <p className="mt-2 text-sm text-gray-500">
-                        Are you sure you want to log out of ECSecora?
+                        Are you sure you want to log out of Secora?
                     </p>
                     <div className="mt-6 flex justify-end gap-3">
                         <button

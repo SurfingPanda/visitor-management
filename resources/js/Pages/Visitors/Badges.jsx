@@ -89,7 +89,7 @@ export default function Badges({ visitors, filters }) {
                                 {/* Top strip */}
                                 <div className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-800 px-4 py-2 text-white">
                                     <span className="text-xs font-bold tracking-wide">
-                                        ECSecora
+                                        Secora
                                     </span>
                                     <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">
                                         {v.badge_number}

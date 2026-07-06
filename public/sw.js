@@ -1,4 +1,4 @@
-// ECSecora PWA service worker.
+// Secora PWA service worker.
 // Intentionally conservative: it only caches the immutable, fingerprinted Vite
 // build assets (cache-first for speed/offline shell). It does NOT intercept
 // page navigations or API/Inertia requests, so auth, CSRF, and live data always

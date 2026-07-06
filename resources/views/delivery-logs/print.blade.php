@@ -215,7 +215,7 @@
         </table>
 
         <div class="foot">
-            <span>ECSecora — Delivery Log Report</span>
+            <span>Secora — Delivery Log Report</span>
             <span>{{ count($rows) }} {{ \Illuminate\Support\Str::plural('record', count($rows)) }}</span>
         </div>
     </div>

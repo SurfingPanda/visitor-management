@@ -4,7 +4,7 @@ Guidance for working in this repository.
 
 ## Project
 
-**ECSecora** — a Visitor & Facility Management system for Eljin Corporation (front desk, fleet/delivery, inventory, safety). Runs on XAMPP (Windows).
+**Secora** — a Visitor & Facility Management system for Eljin Corporation (front desk, fleet/delivery, inventory, safety). Runs on XAMPP (Windows).
 
 **Stack:** Laravel 12 + Inertia.js + React 18 + Tailwind CSS (Breeze `react` scaffold), MySQL/MariaDB. Charts via Chart.js (`react-chartjs-2`). QR via `html5-qrcode` / `qrcode.react`.
 

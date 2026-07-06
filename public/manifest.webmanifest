@@ -1,6 +1,6 @@
 {
-    "name": "ECSecora Visitor System",
-    "short_name": "ECSecora",
+    "name": "Secora Visitor System",
+    "short_name": "Secora",
     "description": "Visitor, delivery, vehicle, and biometric management for the front desk.",
     "start_url": "/dashboard",
     "scope": "/",

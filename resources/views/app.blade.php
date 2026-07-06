@@ -15,7 +15,7 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="ECSecora">
+        <meta name="apple-mobile-web-app-title" content="Secora">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

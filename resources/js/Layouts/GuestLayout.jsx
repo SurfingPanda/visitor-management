@@ -16,7 +16,7 @@ export default function GuestLayout({ children }) {
                     {children}
                 </div>
                 <p className="mt-6 text-center text-xs text-slate-400">
-                    &copy; {new Date().getFullYear()} ECSecora
+                    &copy; {new Date().getFullYear()} Secora
                 </p>
             </div>
         </div>
