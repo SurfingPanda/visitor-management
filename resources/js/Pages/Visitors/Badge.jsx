@@ -31,12 +31,12 @@ export default function Badge({ visitor }) {
                     {/* Header */}
                     <div className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-800 px-5 py-3 text-white">
                         <div className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15">
-                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="4" y="3" width="16" height="18" rx="2" />
-                                    <circle cx="12" cy="9" r="2.5" />
-                                    <path d="M8 17c0-2.2 1.8-4 4-4s4 1.8 4 4" />
-                                </svg>
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white p-1">
+                                <img
+                                    src="/images/secora-logo.png"
+                                    alt="Secora"
+                                    className="h-full w-full object-contain"
+                                />
                             </span>
                             <span className="text-sm font-bold tracking-wide">
                                 Secora

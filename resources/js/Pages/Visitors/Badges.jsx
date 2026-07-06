@@ -88,8 +88,17 @@ export default function Badges({ visitors, filters }) {
                             >
                                 {/* Top strip */}
                                 <div className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-800 px-4 py-2 text-white">
-                                    <span className="text-xs font-bold tracking-wide">
-                                        Secora
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="flex h-5 w-5 items-center justify-center rounded bg-white p-0.5">
+                                            <img
+                                                src="/images/secora-logo.png"
+                                                alt="Secora"
+                                                className="h-full w-full object-contain"
+                                            />
+                                        </span>
+                                        <span className="text-xs font-bold tracking-wide">
+                                            Secora
+                                        </span>
                                     </span>
                                     <span className="text-[10px] font-semibold uppercase tracking-widest opacity-80">
                                         {v.badge_number}

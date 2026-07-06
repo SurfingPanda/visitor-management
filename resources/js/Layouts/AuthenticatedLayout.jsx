@@ -244,9 +244,16 @@ function Sidebar({ onNavigate, isAdmin, modules = [], collapsed = false }) {
                     (collapsed ? 'px-2' : 'px-5')
                 }
             >
-                <span className="text-lg font-bold tracking-tight text-white">
-                    Secora
-                </span>
+                <img
+                    src="/images/secora-logo.png"
+                    alt="Secora"
+                    className="h-9 w-auto shrink-0"
+                />
+                {!collapsed && (
+                    <span className="text-lg font-bold tracking-tight text-white">
+                        Secora
+                    </span>
+                )}
             </div>
 
             {/* Nav */}
