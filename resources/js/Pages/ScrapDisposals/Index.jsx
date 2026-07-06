@@ -87,18 +87,165 @@ function Detail({ label, value }) {
     );
 }
 
+const emptyItem = { name: '', quantity: 1, uom: '' };
+
 const emptyForm = {
     reference_no: '',
-    item: '',
     category: '',
-    quantity: 1,
-    unit: '',
     disposal_date: '',
     method: 'discarded',
     recipient: '',
     amount: '',
     notes: '',
+    items: [{ ...emptyItem }],
 };
+
+/* Total quantity across a disposal's line items. */
+const itemsTotal = (record) =>
+    (record.items ?? []).reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
+
+/* Short label for a disposal in lists / dialogs. */
+const disposalTitle = (record) => {
+    const items = record.items ?? [];
+    if (items.length === 0) return '—';
+    if (items.length === 1) return items[0].name;
+    return `${items[0].name} +${items.length - 1} more`;
+};
+
+/* ---------- items editor ---------- */
+
+function ScrapItemsEditor({ form }) {
+    const items = form.data.items ?? [];
+    const setItems = (next) => form.setData('items', next);
+    const addItem = () => setItems([...items, { ...emptyItem }]);
+    const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
+    const updateItem = (i, key, value) =>
+        setItems(items.map((it, idx) => (idx === i ? { ...it, [key]: value } : it)));
+
+    const fieldClass =
+        'block w-full rounded-lg border-gray-300 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500';
+    const subLabel = 'mb-1 block text-xs font-medium text-gray-500';
+
+    return (
+        <div className="sm:col-span-2">
+            <div className="mb-1.5 flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                    Items <span className="text-red-500">*</span>
+                </label>
+                <button
+                    type="button"
+                    onClick={addItem}
+                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Add item
+                </button>
+            </div>
+
+            <div className="space-y-3">
+                {items.map((it, i) => (
+                    <div
+                        key={i}
+                        className="rounded-lg border border-gray-200 bg-gray-50/60 p-3"
+                    >
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
+                            <div className="sm:col-span-6">
+                                <label className={subLabel}>
+                                    Item / description
+                                </label>
+                                <input
+                                    type="text"
+                                    value={it.name}
+                                    onChange={(e) =>
+                                        updateItem(i, 'name', e.target.value)
+                                    }
+                                    placeholder="e.g. Scrap metal sheets"
+                                    className={fieldClass}
+                                />
+                                <InputError
+                                    message={form.errors[`items.${i}.name`]}
+                                    className="mt-1"
+                                />
+                            </div>
+
+                            <div className="sm:col-span-2">
+                                <label className={subLabel}>Quantity</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={it.quantity}
+                                    onChange={(e) =>
+                                        updateItem(
+                                            i,
+                                            'quantity',
+                                            e.target.value === ''
+                                                ? ''
+                                                : Math.max(
+                                                      0,
+                                                      parseInt(e.target.value, 10) || 0,
+                                                  ),
+                                        )
+                                    }
+                                    className={fieldClass}
+                                />
+                                <InputError
+                                    message={form.errors[`items.${i}.quantity`]}
+                                    className="mt-1"
+                                />
+                            </div>
+
+                            <div className="sm:col-span-3">
+                                <label className={subLabel}>UOM</label>
+                                <select
+                                    value={it.uom ?? ''}
+                                    onChange={(e) =>
+                                        updateItem(i, 'uom', e.target.value)
+                                    }
+                                    className={fieldClass}
+                                >
+                                    <option value="">Select unit</option>
+                                    {it.uom && !UNITS.includes(it.uom) && (
+                                        <option value={it.uom}>{it.uom}</option>
+                                    )}
+                                    {UNITS.map((u) => (
+                                        <option key={u} value={u}>
+                                            {u}
+                                        </option>
+                                    ))}
+                                </select>
+                                <InputError
+                                    message={form.errors[`items.${i}.uom`]}
+                                    className="mt-1"
+                                />
+                            </div>
+
+                            <div className="flex items-start sm:col-span-1 sm:pt-6">
+                                <button
+                                    type="button"
+                                    onClick={() => removeItem(i)}
+                                    disabled={items.length === 1}
+                                    title="Remove item"
+                                    className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-400"
+                                >
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                        <path d="M10 11v6M14 11v6" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {typeof form.errors.items === 'string' && (
+                <InputError message={form.errors.items} className="mt-1" />
+            )}
+        </div>
+    );
+}
 
 /* ---------- form fields ---------- */
 
@@ -109,19 +256,7 @@ function DisposalFields({ form, methods }) {
 
     return (
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-                <label className={label}>
-                    Item / description <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    value={form.data.item}
-                    onChange={(e) => form.setData('item', e.target.value)}
-                    placeholder="e.g. Scrap metal sheets"
-                    className={field}
-                />
-                <InputError message={form.errors.item} className="mt-1" />
-            </div>
+            <ScrapItemsEditor form={form} />
 
             <div>
                 <label className={label}>Reference no.</label>
@@ -145,47 +280,6 @@ function DisposalFields({ form, methods }) {
                     className={field}
                 />
                 <InputError message={form.errors.category} className="mt-1" />
-            </div>
-
-            <div>
-                <label className={label}>
-                    Quantity <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="number"
-                    min="0"
-                    value={form.data.quantity}
-                    onChange={(e) =>
-                        form.setData(
-                            'quantity',
-                            e.target.value === ''
-                                ? ''
-                                : Math.max(0, parseInt(e.target.value, 10) || 0),
-                        )
-                    }
-                    className={field}
-                />
-                <InputError message={form.errors.quantity} className="mt-1" />
-            </div>
-
-            <div>
-                <label className={label}>Unit</label>
-                <select
-                    value={form.data.unit}
-                    onChange={(e) => form.setData('unit', e.target.value)}
-                    className={field}
-                >
-                    <option value="">Select unit</option>
-                    {form.data.unit && !UNITS.includes(form.data.unit) && (
-                        <option value={form.data.unit}>{form.data.unit}</option>
-                    )}
-                    {UNITS.map((u) => (
-                        <option key={u} value={u}>
-                            {u}
-                        </option>
-                    ))}
-                </select>
-                <InputError message={form.errors.unit} className="mt-1" />
             </div>
 
             <div>
@@ -347,10 +441,7 @@ export default function ScrapDisposalsIndex({
         editForm.clearErrors();
         editForm.setData({
             reference_no: item.reference_no ?? '',
-            item: item.item ?? '',
             category: item.category ?? '',
-            quantity: item.quantity ?? 0,
-            unit: item.unit ?? '',
             disposal_date: item.disposal_date
                 ? String(item.disposal_date).slice(0, 10)
                 : '',
@@ -358,6 +449,14 @@ export default function ScrapDisposalsIndex({
             recipient: item.recipient ?? '',
             amount: item.amount ?? '',
             notes: item.notes ?? '',
+            items:
+                item.items && item.items.length
+                    ? item.items.map((it) => ({
+                          name: it.name ?? '',
+                          quantity: it.quantity ?? 0,
+                          uom: it.uom ?? '',
+                      }))
+                    : [{ ...emptyItem }],
         });
         setEditing(item);
     };
@@ -515,17 +614,22 @@ export default function ScrapDisposalsIndex({
                                     <tr key={item.id} className="hover:bg-gray-50/70">
                                         <td className="px-6 py-3">
                                             <div className="font-medium text-gray-900">
-                                                {item.item}
+                                                {disposalTitle(item)}
                                             </div>
                                             <div className="text-xs text-gray-400">
-                                                {[item.reference_no, item.category]
+                                                {[
+                                                    (item.items?.length ?? 0) > 1
+                                                        ? `${item.items.length} items`
+                                                        : null,
+                                                    item.reference_no,
+                                                    item.category,
+                                                ]
                                                     .filter(Boolean)
                                                     .join(' · ')}
                                             </div>
                                         </td>
                                         <td className="px-6 py-3 font-medium text-gray-700">
-                                            {item.quantity}
-                                            {item.unit ? ` ${item.unit}` : ''}
+                                            {itemsTotal(item)}
                                         </td>
                                         <td className="px-6 py-3">
                                             <MethodBadge method={item.method} />
@@ -636,7 +740,7 @@ export default function ScrapDisposalsIndex({
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                                 <h2 className="text-xl font-bold text-gray-900">
-                                    {viewing.item}
+                                    {disposalTitle(viewing)}
                                 </h2>
                                 {(viewing.reference_no || viewing.category) && (
                                     <p className="mt-0.5 text-sm text-gray-500">
@@ -649,11 +753,47 @@ export default function ScrapDisposalsIndex({
                             <MethodBadge method={viewing.method} />
                         </div>
 
+                        {viewing.items?.length > 0 && (
+                            <div className="mt-6 overflow-hidden rounded-xl border border-gray-100">
+                                <table className="min-w-full divide-y divide-gray-100 text-sm">
+                                    <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                        <tr>
+                                            <th className="px-4 py-2.5">Item</th>
+                                            <th className="px-4 py-2.5 text-right">Qty</th>
+                                            <th className="px-4 py-2.5">UOM</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {viewing.items.map((it) => (
+                                            <tr key={it.id}>
+                                                <td className="px-4 py-2.5 font-medium text-gray-800">
+                                                    {it.name}
+                                                </td>
+                                                <td className="px-4 py-2.5 text-right tabular-nums text-gray-600">
+                                                    {it.quantity}
+                                                </td>
+                                                <td className="px-4 py-2.5 text-gray-500">
+                                                    {it.uom || '—'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot className="border-t border-gray-100 bg-gray-50/60">
+                                        <tr>
+                                            <td className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                Total
+                                            </td>
+                                            <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-gray-800">
+                                                {itemsTotal(viewing)}
+                                            </td>
+                                            <td className="px-4 py-2.5" />
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        )}
+
                         <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-                            <Detail
-                                label="Quantity"
-                                value={`${viewing.quantity}${viewing.unit ? ' ' + viewing.unit : ''}`}
-                            />
                             <Detail
                                 label="Method"
                                 value={methodLabels[viewing.method] ?? viewing.method}
@@ -785,7 +925,7 @@ export default function ScrapDisposalsIndex({
                         <p className="mt-2 text-sm text-gray-500">
                             Remove the disposal record for{' '}
                             <span className="font-semibold text-gray-700">
-                                {deleting.item}
+                                {disposalTitle(deleting)}
                             </span>
                             ? This can't be undone.
                         </p>

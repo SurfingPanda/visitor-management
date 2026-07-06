@@ -24,12 +24,13 @@ class ScrapDisposalController extends Controller
         ];
 
         $disposals = ScrapDisposal::query()
+            ->with('items')
             ->when($filters['search'], function ($query, $search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('item', 'like', "%{$search}%")
-                        ->orWhere('reference_no', 'like', "%{$search}%")
+                    $q->where('reference_no', 'like', "%{$search}%")
                         ->orWhere('category', 'like', "%{$search}%")
-                        ->orWhere('recipient', 'like', "%{$search}%");
+                        ->orWhere('recipient', 'like', "%{$search}%")
+                        ->orWhereHas('items', fn ($i) => $i->where('name', 'like', "%{$search}%"));
                 });
             })
             ->when(
@@ -59,12 +60,16 @@ class ScrapDisposalController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validateDisposal($request);
+        $items = $data['items'];
+        unset($data['items']);
 
-        ScrapDisposal::create([
+        $disposal = ScrapDisposal::create([
             ...$data,
             'recorded_by' => $request->user()->id,
             'recorder_name' => $request->user()->name,
         ]);
+
+        $disposal->items()->createMany($items);
 
         return redirect()
             ->route('scrap-disposals.index')
@@ -73,7 +78,15 @@ class ScrapDisposalController extends Controller
 
     public function update(Request $request, ScrapDisposal $scrapDisposal): RedirectResponse
     {
-        $scrapDisposal->update($this->validateDisposal($request));
+        $data = $this->validateDisposal($request);
+        $items = $data['items'];
+        unset($data['items']);
+
+        $scrapDisposal->update($data);
+
+        // Replace the item list wholesale — simplest correct sync for a small set.
+        $scrapDisposal->items()->delete();
+        $scrapDisposal->items()->createMany($items);
 
         return back()->with('success', 'Scrap disposal updated.');
     }
@@ -92,15 +105,16 @@ class ScrapDisposalController extends Controller
     {
         return $request->validate([
             'reference_no' => ['nullable', 'string', 'max:255'],
-            'item' => ['required', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:255'],
-            'quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
-            'unit' => ['nullable', 'string', 'max:50'],
             'disposal_date' => ['nullable', 'date'],
             'method' => ['required', Rule::in(self::METHODS)],
             'recipient' => ['nullable', 'string', 'max:255'],
             'amount' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'notes' => ['nullable', 'string', 'max:255'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.name' => ['required', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'items.*.uom' => ['nullable', 'string', 'max:50'],
         ]);
     }
 }

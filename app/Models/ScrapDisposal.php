@@ -4,15 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ScrapDisposal extends Model
 {
     protected $fillable = [
         'reference_no',
-        'item',
         'category',
-        'quantity',
-        'unit',
         'disposal_date',
         'method',
         'recipient',
@@ -25,10 +23,14 @@ class ScrapDisposal extends Model
     protected function casts(): array
     {
         return [
-            'quantity' => 'integer',
             'amount' => 'decimal:2',
             'disposal_date' => 'date',
         ];
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(ScrapDisposalItem::class);
     }
 
     public function recorder(): BelongsTo

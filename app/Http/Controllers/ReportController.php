@@ -7,6 +7,7 @@ use App\Models\Driver;
 use App\Models\Equipment;
 use App\Models\IncidentReport;
 use App\Models\ScrapDisposal;
+use App\Models\ScrapDisposalItem;
 use App\Models\SupplierDelivery;
 use App\Models\SupplierDeliveryItem;
 use App\Models\Trip;
@@ -188,9 +189,13 @@ class ReportController extends Controller
             ->groupBy('method')
             ->pluck('count', 'method');
 
+        // Total quantity now lives on the child items table.
+        $scrapIds = (clone $scrapBase())->pluck('id');
+        $scrapQty = (int) ScrapDisposalItem::whereIn('scrap_disposal_id', $scrapIds)->sum('quantity');
+
         $scrap = [
             'total' => (clone $scrapBase())->count(),
-            'qty' => (int) (clone $scrapBase())->sum('quantity'),
+            'qty' => $scrapQty,
             'amount' => (float) (clone $scrapBase())->sum('amount'),
             'by_method' => collect($scrapMethods)
                 ->map(fn ($m) => ['label' => ucfirst($m), 'count' => (int) ($scrapByMethod[$m] ?? 0)])
