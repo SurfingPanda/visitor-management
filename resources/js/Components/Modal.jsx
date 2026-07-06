@@ -35,7 +35,16 @@ export default function Modal({
                 as="div"
                 id="modal"
                 className="fixed inset-0 z-50 flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
-                onClose={close}
+                // Clicking the backdrop must NOT dismiss the modal — Headless UI
+                // fires onClose on outside-click, so we ignore it here and only
+                // close via the modal's own Cancel/X buttons or the Escape key.
+                onClose={() => {}}
+                onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        close();
+                    }
+                }}
             >
                 <TransitionChild
                     enter="ease-out duration-300"
