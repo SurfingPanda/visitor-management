@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\QueuedResetPassword;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -51,6 +52,15 @@ class User extends Authenticatable
             'module_access' => 'array',
             'module_write' => 'array',
         ];
+    }
+
+    /**
+     * Send the password reset notification via the queued variant so a mail
+     * hiccup retries in the background instead of failing the web request.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new QueuedResetPassword($token));
     }
 
     /**
