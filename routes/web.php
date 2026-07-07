@@ -67,6 +67,9 @@ Route::middleware(['auth', 'verified', 'module.access'])->group(function () {
     Route::post('/visitors/scan', [VisitorController::class, 'scanCheckout'])->name('visitors.scan-checkout');
     Route::get('/visitors/export', [VisitorController::class, 'export'])->name('visitors.export');
     Route::get('/visitors/{visitor}/badge', [VisitorController::class, 'badge'])->name('visitors.badge');
+    Route::get('/visitors/{visitor}/photo/{which}', [VisitorController::class, 'photo'])
+        ->whereIn('which', ['face', 'id'])
+        ->name('visitors.photo');
     Route::get('/visitors/{visitor}', [VisitorController::class, 'show'])->name('visitors.show');
     Route::patch('/visitors/{visitor}', [VisitorController::class, 'update'])->name('visitors.update');
     Route::patch('/visitors/{visitor}/check-in', [VisitorController::class, 'checkIn'])->name('visitors.check-in');

@@ -104,7 +104,7 @@ class Visitor extends Model
         if ($visit) {
             foreach ([$visit->photo_path, $visit->id_photo_path] as $path) {
                 if ($path) {
-                    Storage::disk('public')->delete($path);
+                    Storage::disk('local')->delete($path);
                 }
             }
 
@@ -143,6 +143,15 @@ class Visitor extends Model
 
         $path = $visit?->{$column};
 
-        return $path ? Storage::disk('public')->url($path) : null;
+        if (! $path) {
+            return null;
+        }
+
+        // Face/ID photos live on the private disk; serve them through the gated
+        // photo() route rather than a world-readable /storage URL.
+        return route('visitors.photo', [
+            'visitor' => $this->id,
+            'which' => $column === 'id_photo_path' ? 'id' : 'face',
+        ]);
     }
 }

@@ -271,6 +271,23 @@ class VisitorController extends Controller
     }
 
     /**
+     * Stream a visitor's current arrival photo (face or ID) from the private
+     * disk to authenticated Front Desk staff. Photos exist only for the open
+     * visit and are purged on check-out, so this 404s once the visitor leaves.
+     */
+    public function photo(Visitor $visitor, string $which): StreamedResponse
+    {
+        $column = $which === 'id' ? 'id_photo_path' : 'photo_path';
+        $path = $visitor->openVisit()?->{$column};
+
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, [
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    }
+
+    /**
      * Scan a badge QR (or type its code) to check a visitor in or out. The guard
      * picks the mode explicitly ('in' on arrival, 'out' on departure) so an
      * accidental double-scan is a no-op instead of flipping the visitor's state.
@@ -333,7 +350,9 @@ class VisitorController extends Controller
     }
 
     /**
-     * Persist a base64 data-URL photo to the public disk; return its path.
+     * Persist a base64 data-URL photo to the private disk; return its path.
+     * Face/ID photos are sensitive PII, so they never touch the world-readable
+     * public disk — they're streamed back through the gated photo() route.
      */
     private function storePhoto(?string $dataUrl): ?string
     {
@@ -351,7 +370,7 @@ class VisitorController extends Controller
         $ext = str_contains($meta, 'png') ? 'png' : 'jpg';
         $path = 'visitor-photos/'.Str::ulid().'.'.$ext;
 
-        Storage::disk('public')->put($path, $binary);
+        Storage::disk('local')->put($path, $binary);
 
         return $path;
     }
