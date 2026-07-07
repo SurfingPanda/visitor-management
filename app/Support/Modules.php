@@ -12,7 +12,13 @@ namespace App\Support;
 class Modules
 {
     /**
-     * @var array<string, array{label: string, prefixes: list<string>}>
+     * Each entry maps a module to the route-name prefixes it gates. An optional
+     * `writePrefixes` list marks the routes that mutate data: for such modules
+     * the plain grant is view-only, and a separate write grant is required to
+     * reach those routes. Modules without `writePrefixes` are all-or-nothing
+     * (a grant means full read+write, unchanged).
+     *
+     * @var array<string, array{label: string, prefixes: list<string>, writePrefixes?: list<string>}>
      */
     public const LIST = [
         'reports' => [
@@ -21,11 +27,12 @@ class Modules
         ],
         'front_desk' => [
             'label' => 'Front Desk (Visitors, Scan, Badges)',
-            'prefixes' => ['visitors.', 'badges.'],
+            'prefixes' => ['visitors.', 'badges.', 'visitor-requests.'],
         ],
         'incidents' => [
             'label' => 'Incident & Accident Reports',
             'prefixes' => ['incident-reports.', 'emergency-roster.'],
+            'writePrefixes' => ['incident-reports.store', 'incident-reports.update'],
         ],
         'delivery_logs' => [
             'label' => 'Delivery Log',
@@ -68,15 +75,37 @@ class Modules
     }
 
     /**
-     * Key + label pairs for the UI.
+     * Module keys that split view vs write (i.e. declare `writePrefixes`).
      *
-     * @return list<array{key: string, label: string}>
+     * @return list<string>
+     */
+    public static function writableKeys(): array
+    {
+        $out = [];
+        foreach (self::LIST as $key => $def) {
+            if (! empty($def['writePrefixes'])) {
+                $out[] = $key;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Key + label pairs for the UI. `writable` flags modules that expose a
+     * separate write grant on top of view access.
+     *
+     * @return list<array{key: string, label: string, writable: bool}>
      */
     public static function options(): array
     {
         $out = [];
         foreach (self::LIST as $key => $def) {
-            $out[] = ['key' => $key, 'label' => $def['label']];
+            $out[] = [
+                'key' => $key,
+                'label' => $def['label'],
+                'writable' => ! empty($def['writePrefixes']),
+            ];
         }
 
         return $out;
@@ -93,6 +122,27 @@ class Modules
 
         foreach (self::LIST as $key => $def) {
             foreach ($def['prefixes'] as $prefix) {
+                if (str_starts_with($routeName, $prefix)) {
+                    return $key;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Which module (if any) a route mutates — i.e. requires write access for.
+     * Returns null for read routes and for modules without a view/write split.
+     */
+    public static function forWriteRoute(?string $routeName): ?string
+    {
+        if (! $routeName) {
+            return null;
+        }
+
+        foreach (self::LIST as $key => $def) {
+            foreach ($def['writePrefixes'] ?? [] as $prefix) {
                 if (str_starts_with($routeName, $prefix)) {
                     return $key;
                 }

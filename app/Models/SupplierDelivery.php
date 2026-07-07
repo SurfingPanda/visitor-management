@@ -25,7 +25,7 @@ class SupplierDelivery extends Model
         'recorder_name',
     ];
 
-    protected $appends = ['dr_image_url'];
+    protected $appends = ['dr_image_url', 'reference'];
 
     protected function casts(): array
     {
@@ -40,6 +40,17 @@ class SupplierDelivery extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SupplierDeliveryItem::class);
+    }
+
+    /**
+     * Human-readable reference code, e.g. SUP-0000000042. Derived from the
+     * primary key so it is stable and unique per record.
+     */
+    protected function reference(): Attribute
+    {
+        return Attribute::get(
+            fn () => sprintf('SUP-%010d', $this->id ?? 0),
+        );
     }
 
     protected function drImageUrl(): Attribute

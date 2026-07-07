@@ -41,6 +41,13 @@ const icons = {
             <path d="m7 14 4-4 3 3 5-6" />
         </svg>
     ),
+    requests: (
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <path d="M14 2v6h6" />
+            <path d="m9 15 2 2 4-4" />
+        </svg>
+    ),
     settings: (
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3" />
@@ -139,6 +146,7 @@ const navGroups = [
         title: 'Front Desk',
         items: [
             { label: 'Visitors', icon: icons.visitors, route: 'visitors.index', module: 'front_desk' },
+            { label: 'Requests', icon: icons.requests, route: 'visitor-requests.index', module: 'front_desk' },
             { label: 'Scan / Check-out', icon: icons.checkin, route: 'visitors.scan', module: 'front_desk' },
             { label: 'Badges', icon: icons.badges, route: 'badges.index', module: 'front_desk' },
         ],

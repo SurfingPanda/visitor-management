@@ -30,6 +30,12 @@ class IncidentReportController extends Controller
                         ->orWhere('location', 'like', "%{$search}%")
                         ->orWhere('people_involved', 'like', "%{$search}%")
                         ->orWhere('reporter_name', 'like', "%{$search}%");
+
+                    // Allow lookup by reference code, e.g. "INC-000000042" or
+                    // just "42" — the numeric part maps to the primary key.
+                    if (preg_match('/^(?:inc|acc)?-?0*(\d+)$/i', trim($search), $m)) {
+                        $q->orWhere('id', (int) $m[1]);
+                    }
                 });
             })
             ->when(

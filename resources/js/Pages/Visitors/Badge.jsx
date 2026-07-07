@@ -27,7 +27,7 @@ export default function Badge({ visitor }) {
 
             <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 px-4 py-10">
                 {/* Badge */}
-                <div className="badge-sheet w-[340px] overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-200">
+                <div className="badge-sheet w-full max-w-[340px] overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-200">
                     {/* Header */}
                     <div className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-800 px-5 py-3 text-white">
                         <div className="flex items-center gap-2">

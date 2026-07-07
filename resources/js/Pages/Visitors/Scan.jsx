@@ -11,6 +11,10 @@ export default function Scan() {
     const [scanning, setScanning] = useState(false);
     const [camError, setCamError] = useState(null);
     const [manual, setManual] = useState('');
+    const [mode, setMode] = useState('in'); // 'in' | 'out'
+    // Read inside async scan callbacks without a stale closure.
+    const modeRef = useRef(mode);
+    modeRef.current = mode;
 
     const stopScanner = async () => {
         const s = scannerRef.current;
@@ -30,7 +34,7 @@ export default function Scan() {
         if (!code) return;
         router.post(
             route('visitors.scan-checkout'),
-            { code },
+            { code, mode: modeRef.current },
             { preserveScroll: true, preserveState: true },
         );
     };
@@ -86,10 +90,11 @@ export default function Scan() {
             header={
                 <div>
                     <h2 className="text-lg font-semibold leading-tight text-gray-800">
-                        Scan to check out
+                        Scan badge
                     </h2>
                     <p className="hidden text-sm text-gray-500 sm:block">
-                        Scan the QR code on the visitor’s badge
+                        Scan the QR to check a visitor in on arrival, or out when
+                        they leave
                     </p>
                 </div>
             }
@@ -97,6 +102,44 @@ export default function Scan() {
             <Head title="Scan badge" />
 
             <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+                {/* Mode selector — a scan only ever performs this action */}
+                <div className="flex flex-col items-center gap-2">
+                    <div className="grid w-full max-w-sm grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1">
+                        {[
+                            { key: 'in', label: 'Check in' },
+                            { key: 'out', label: 'Check out' },
+                        ].map((m) => {
+                            const active = mode === m.key;
+                            const activeColor =
+                                m.key === 'in'
+                                    ? 'bg-green-600 text-white shadow-sm'
+                                    : 'bg-amber-500 text-white shadow-sm';
+                            return (
+                                <button
+                                    key={m.key}
+                                    type="button"
+                                    onClick={() => setMode(m.key)}
+                                    className={
+                                        'rounded-lg px-3 py-2 text-sm font-semibold transition ' +
+                                        (active
+                                            ? activeColor
+                                            : 'text-gray-500 hover:text-gray-800')
+                                    }
+                                >
+                                    {m.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <p className="text-xs text-gray-500">
+                        Scanning will{' '}
+                        <span className="font-semibold">
+                            {mode === 'in' ? 'check visitors in' : 'check visitors out'}
+                        </span>
+                        .
+                    </p>
+                </div>
+
                 {/* Result banner */}
                 {result && (
                     <div
@@ -175,8 +218,8 @@ export default function Scan() {
                         Can’t scan?
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                        Enter the badge number (e.g. V-0001) or code printed on
-                        the badge.
+                        Enter the badge number (e.g. VIS-2026-000000001) or code
+                        printed on the badge.
                     </p>
                     <form
                         onSubmit={submitManual}
@@ -186,14 +229,14 @@ export default function Scan() {
                             type="text"
                             value={manual}
                             onChange={(e) => setManual(e.target.value)}
-                            placeholder="V-0001"
+                            placeholder="VIS-2026-000000001"
                             className="block w-full rounded-lg border-gray-300 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                         <button
                             type="submit"
                             className="shrink-0 rounded-lg bg-gray-800 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700"
                         >
-                            Check out
+                            {mode === 'in' ? 'Check in' : 'Check out'}
                         </button>
                     </form>
                 </div>

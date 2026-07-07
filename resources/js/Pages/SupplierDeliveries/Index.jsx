@@ -684,7 +684,7 @@ export default function SupplierDeliveriesIndex({
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search supplier, DR#, item, receiver…"
+                                placeholder="Search ref, supplier, DR#, item, receiver…"
                                 className="block w-full rounded-lg border-gray-300 py-2.5 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
@@ -790,6 +790,7 @@ export default function SupplierDeliveriesIndex({
                         <table className="min-w-full divide-y divide-gray-100 text-sm">
                             <thead>
                                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                    <th className="px-6 py-3">ID #</th>
                                     <th className="px-6 py-3">Supplier</th>
                                     <th className="px-6 py-3">DR #</th>
                                     <th className="px-6 py-3">Delivery date</th>
@@ -802,6 +803,11 @@ export default function SupplierDeliveriesIndex({
                             <tbody className="divide-y divide-gray-50">
                                 {deliveries.data.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50/70">
+                                        <td className="whitespace-nowrap px-6 py-3">
+                                            <span className="font-mono text-[11px] font-medium tracking-wide text-indigo-500">
+                                                {item.reference}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-3">
                                             <div>
                                                 <div className="font-medium text-gray-900">
@@ -889,7 +895,7 @@ export default function SupplierDeliveriesIndex({
                                 {deliveries.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="px-6 py-12 text-center text-gray-400"
                                         >
                                             No supplier deliveries yet. Log one to get

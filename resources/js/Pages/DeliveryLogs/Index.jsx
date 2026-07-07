@@ -600,7 +600,7 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search plate, route, driver…"
+                            placeholder="Search ref, plate, route, driver…"
                             className="block w-full rounded-lg border-gray-300 py-2.5 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                         />
                     </div>
@@ -734,6 +734,7 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
                         <table className="min-w-full divide-y divide-gray-100 text-sm">
                             <thead>
                                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                    <th className="px-6 py-3">ID #</th>
                                     <th className="px-6 py-3">Out</th>
                                     <th className="px-6 py-3">Plate</th>
                                     <th className="px-6 py-3">Route</th>
@@ -746,6 +747,11 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
                             <tbody className="divide-y divide-gray-50">
                                 {deliveries.data.map((d) => (
                                     <tr key={d.id} className="hover:bg-gray-50/70">
+                                        <td className="whitespace-nowrap px-6 py-3">
+                                            <span className="font-mono text-[11px] font-medium tracking-wide text-indigo-500">
+                                                {d.reference}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-3 text-gray-500">
                                             {formatDateTime(d.delivery_out)}
                                         </td>
@@ -796,7 +802,7 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
                                                     <button
                                                         type="button"
                                                         onClick={() => setReturning(d)}
-                                                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                                                        className="whitespace-nowrap rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
                                                     >
                                                         Mark returned
                                                     </button>
@@ -822,7 +828,7 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
                                 {deliveries.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="px-6 py-12 text-center text-gray-400"
                                         >
                                             No deliveries logged.

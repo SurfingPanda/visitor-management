@@ -415,17 +415,7 @@ export default function VisitorsIndex({ visitors, filters, counts }) {
                                                     </svg>
                                                     Badge
                                                 </Link>
-                                                {v.status !== 'checked_in' ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            openCheckIn(v)
-                                                        }
-                                                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-                                                    >
-                                                        Check in
-                                                    </button>
-                                                ) : (
+                                                {v.status === 'checked_in' ? (
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -439,6 +429,31 @@ export default function VisitorsIndex({ visitors, filters, counts }) {
                                                         className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
                                                     >
                                                         Check out
+                                                    </button>
+                                                ) : v.status === 'expected' ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            openCheckIn(v)
+                                                        }
+                                                        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                                                    >
+                                                        Check in
+                                                    </button>
+                                                ) : (
+                                                    // checked_out — visit is complete; allow
+                                                    // re-admitting a returning visitor as a new
+                                                    // visit, but de-emphasized so the row doesn't
+                                                    // read as unfinished.
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            openCheckIn(v)
+                                                        }
+                                                        title="Start a new visit for this returning visitor"
+                                                        className="rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50"
+                                                    >
+                                                        Check in again
                                                     </button>
                                                 )}
                                             </div>

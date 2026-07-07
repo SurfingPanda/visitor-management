@@ -545,7 +545,7 @@ export default function ScrapDisposalsIndex({
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search item, ref#, category, buyer…"
+                                placeholder="Search ID, item, ref#, category, buyer…"
                                 className="block w-full rounded-lg border-gray-300 py-2.5 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
@@ -609,6 +609,7 @@ export default function ScrapDisposalsIndex({
                         <table className="min-w-full divide-y divide-gray-100 text-sm">
                             <thead>
                                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                    <th className="px-6 py-3">ID #</th>
                                     <th className="px-6 py-3">Item</th>
                                     <th className="px-6 py-3">Qty</th>
                                     <th className="px-6 py-3">Method</th>
@@ -621,6 +622,11 @@ export default function ScrapDisposalsIndex({
                             <tbody className="divide-y divide-gray-50">
                                 {disposals.data.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50/70">
+                                        <td className="whitespace-nowrap px-6 py-3">
+                                            <span className="font-mono text-[11px] font-medium tracking-wide text-indigo-500">
+                                                {item.reference}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-3">
                                             <div className="font-medium text-gray-900">
                                                 {disposalTitle(item)}
@@ -682,7 +688,7 @@ export default function ScrapDisposalsIndex({
                                 {disposals.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="px-6 py-12 text-center text-gray-400"
                                         >
                                             No scrap disposals yet. Record one to get

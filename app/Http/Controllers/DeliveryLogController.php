@@ -145,13 +145,13 @@ class DeliveryLogController extends Controller
             fwrite($out, "\xEF\xBB\xBF");
 
             fputcsv($out, [
-                'OUT', 'PLATE', 'ROUTE', 'DRIVER', 'HELPER', 'LOAD', 'MISSING',
+                'ID #', 'OUT', 'PLATE', 'ROUTE', 'DRIVER', 'HELPER', 'LOAD', 'MISSING',
                 'STATUS', 'RETURNED', 'REMARKS',
             ]);
 
             foreach ($rows as $r) {
                 fputcsv($out, [
-                    $r['out'], $r['plate'], $r['route'], $r['driver'], $r['helper'],
+                    $r['ref'], $r['out'], $r['plate'], $r['route'], $r['driver'], $r['helper'],
                     $r['load'], $r['missing'], $r['status'], $r['returned'], $r['remarks'],
                 ]);
             }
@@ -201,6 +201,12 @@ class DeliveryLogController extends Controller
                         ->orWhere('route', 'like', "%{$search}%")
                         ->orWhere('driver', 'like', "%{$search}%")
                         ->orWhere('helper', 'like', "%{$search}%");
+
+                    // Allow lookup by reference code, e.g. "DEL-0000000042" or
+                    // just "42" — the numeric part maps to the primary key.
+                    if (preg_match('/^(?:del)?-?0*(\d+)$/i', trim($search), $m)) {
+                        $q->orWhere('id', (int) $m[1]);
+                    }
                 });
             })
             ->when(
@@ -239,6 +245,7 @@ class DeliveryLogController extends Controller
         $tz = self::DISPLAY_TZ;
 
         return $deliveries->map(fn (DeliveryLog $d) => [
+            'ref' => $d->reference,
             'out' => $d->delivery_out?->copy()->setTimezone($tz)->format('M j, Y g:i A') ?? '',
             'plate' => $d->plate_number ?? '',
             'route' => $d->route ?? '',

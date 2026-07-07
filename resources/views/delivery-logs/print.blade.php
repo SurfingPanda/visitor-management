@@ -74,6 +74,7 @@
         }
         tbody tr:nth-child(even) { background: #f6f7f9; }
         .strong { font-weight: 600; color: #111827; }
+        .ref { font-family: 'Courier New', monospace; font-size: 10.5px; font-weight: 600; color: #4f46e5; white-space: nowrap; }
         .muted { color: #6b7280; font-size: 10.5px; }
         .miss { color: #b91c1c; }
         .empty { text-align: center; color: #9ca3af; padding: 44px 0; }
@@ -167,18 +168,20 @@
 
         <table>
             <colgroup>
-                <col style="width: 10%">  {{-- Out --}}
-                <col style="width: 8%">   {{-- Plate --}}
-                <col style="width: 9%">   {{-- Route --}}
-                <col style="width: 12%">  {{-- Crew --}}
-                <col style="width: 19%">  {{-- Load --}}
-                <col style="width: 15%">  {{-- Missing --}}
+                <col style="width: 8%">   {{-- ID # --}}
+                <col style="width: 9%">   {{-- Out --}}
+                <col style="width: 7%">   {{-- Plate --}}
+                <col style="width: 8%">   {{-- Route --}}
+                <col style="width: 11%">  {{-- Crew --}}
+                <col style="width: 17%">  {{-- Load --}}
+                <col style="width: 13%">  {{-- Missing --}}
                 <col style="width: 7%">   {{-- Status --}}
                 <col style="width: 10%">  {{-- Returned --}}
                 <col style="width: 10%">  {{-- Remarks --}}
             </colgroup>
             <thead>
                 <tr>
+                    <th>ID #</th>
                     <th>Out</th>
                     <th>Plate</th>
                     <th>Route</th>
@@ -193,6 +196,7 @@
             <tbody>
                 @forelse ($rows as $r)
                     <tr>
+                        <td class="ref">{{ $r['ref'] }}</td>
                         <td>{{ $r['out'] ?: '—' }}</td>
                         <td class="strong">{{ $r['plate'] ?: '—' }}</td>
                         <td>{{ $r['route'] ?: '—' }}</td>
@@ -209,7 +213,7 @@
                         <td>{{ $r['remarks'] ?: '—' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="9" class="empty">No deliveries match these filters.</td></tr>
+                    <tr><td colspan="10" class="empty">No deliveries match these filters.</td></tr>
                 @endforelse
             </tbody>
         </table>

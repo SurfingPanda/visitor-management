@@ -24,10 +24,20 @@ class EnsureModuleAccess
             return $next($request);
         }
 
-        $module = Modules::forRoute($request->route()?->getName());
+        $routeName = $request->route()?->getName();
+
+        $module = Modules::forRoute($routeName);
 
         if ($module && ! $user->canAccessModule($module)) {
             abort(403, 'You do not have access to this module.');
+        }
+
+        // Modules that split view vs write additionally require a write grant
+        // to reach their mutating routes.
+        $writeModule = Modules::forWriteRoute($routeName);
+
+        if ($writeModule && ! $user->canWriteModule($writeModule)) {
+            abort(403, 'You have view-only access to this module.');
         }
 
         return $next($request);

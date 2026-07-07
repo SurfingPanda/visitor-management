@@ -17,16 +17,33 @@ function formatDate(value) {
 
 function ModuleAccess({ form, modules }) {
     const selected = form.data.module_access ?? [];
+    const canWrite = form.data.module_write ?? [];
     const isAdmin = form.data.is_admin;
 
     const toggle = (key) => {
         const set = new Set(selected);
-        set.has(key) ? set.delete(key) : set.add(key);
+        if (set.has(key)) {
+            set.delete(key);
+            // Dropping view access also drops write access.
+            const w = new Set(canWrite);
+            w.delete(key);
+            form.setData('module_write', [...w]);
+        } else {
+            set.add(key);
+        }
         form.setData('module_access', [...set]);
     };
 
-    const setAll = (all) =>
+    const toggleWrite = (key) => {
+        const w = new Set(canWrite);
+        w.has(key) ? w.delete(key) : w.add(key);
+        form.setData('module_write', [...w]);
+    };
+
+    const setAll = (all) => {
         form.setData('module_access', all ? modules.map((m) => m.key) : []);
+        if (!all) form.setData('module_write', []);
+    };
 
     return (
         <div>
@@ -61,20 +78,46 @@ function ModuleAccess({ form, modules }) {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 p-3 sm:grid-cols-2">
-                    {modules.map((m) => (
-                        <label
-                            key={m.key}
-                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-50"
-                        >
-                            <input
-                                type="checkbox"
-                                checked={selected.includes(m.key)}
-                                onChange={() => toggle(m.key)}
-                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <span className="text-gray-700">{m.label}</span>
-                        </label>
-                    ))}
+                    {modules.map((m) => {
+                        const granted = selected.includes(m.key);
+                        const writes = canWrite.includes(m.key);
+                        return (
+                            <div key={m.key}>
+                                <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-gray-50">
+                                    <input
+                                        type="checkbox"
+                                        checked={granted}
+                                        onChange={() => toggle(m.key)}
+                                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    <span className="text-gray-700">
+                                        {m.label}
+                                    </span>
+                                </label>
+                                {m.writable && granted && (
+                                    <div className="ml-8 mt-0.5 flex items-center gap-4 text-xs">
+                                        <label className="flex cursor-pointer items-center gap-1.5">
+                                            <input
+                                                type="checkbox"
+                                                checked={writes}
+                                                onChange={() =>
+                                                    toggleWrite(m.key)
+                                                }
+                                                className="h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            />
+                                            <span className="text-gray-500">
+                                                Can add &amp; edit
+                                                <span className="text-gray-400">
+                                                    {' '}
+                                                    — otherwise view-only
+                                                </span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
             <InputError message={form.errors.module_access} className="mt-1" />
@@ -175,6 +218,9 @@ export default function UsersIndex({ users, modules }) {
     const moduleLabel = (key) =>
         modules.find((m) => m.key === key)?.label ?? key;
 
+    const isWritable = (key) =>
+        modules.find((m) => m.key === key)?.writable ?? false;
+
     const createForm = useForm({
         name: '',
         email: '',
@@ -182,6 +228,7 @@ export default function UsersIndex({ users, modules }) {
         password_confirmation: '',
         is_admin: false,
         module_access: [],
+        module_write: [],
     });
     createForm.isEdit = false;
 
@@ -192,6 +239,7 @@ export default function UsersIndex({ users, modules }) {
         password_confirmation: '',
         is_admin: false,
         module_access: [],
+        module_write: [],
     });
     editForm.isEdit = true;
 
@@ -224,6 +272,7 @@ export default function UsersIndex({ users, modules }) {
             password_confirmation: '',
             is_admin: !!user.is_admin,
             module_access: user.module_access ?? [],
+            module_write: user.module_write ?? [],
         });
         setEditing(user);
     };
@@ -350,14 +399,27 @@ export default function UsersIndex({ users, modules }) {
                                                 <div className="flex max-w-xs flex-wrap gap-1">
                                                     {(u.module_access ?? [])
                                                         .slice(0, 3)
-                                                        .map((k) => (
-                                                            <span
-                                                                key={k}
-                                                                className="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600"
-                                                            >
-                                                                {moduleLabel(k)}
-                                                            </span>
-                                                        ))}
+                                                        .map((k) => {
+                                                            const viewOnly =
+                                                                isWritable(k) &&
+                                                                !(
+                                                                    u.module_write ??
+                                                                    []
+                                                                ).includes(k);
+                                                            return (
+                                                                <span
+                                                                    key={k}
+                                                                    className="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-600"
+                                                                >
+                                                                    {moduleLabel(k)}
+                                                                    {viewOnly && (
+                                                                        <span className="ml-1 text-gray-400">
+                                                                            (view)
+                                                                        </span>
+                                                                    )}
+                                                                </span>
+                                                            );
+                                                        })}
                                                     {(u.module_access ?? []).length > 3 && (
                                                         <span className="inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium text-gray-500">
                                                             +

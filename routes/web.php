@@ -17,6 +17,7 @@ use App\Http\Controllers\TripController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\VisitorController;
+use App\Http\Controllers\VisitorRequestController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -30,6 +31,21 @@ Route::get('/', function () {
     ]);
 });
 
+// Public, unauthenticated visitor self-registration. Throttled to curb spam
+// submissions and brute-force lookups of the random reference.
+Route::get('/visit', [VisitorRequestController::class, 'create'])->name('visit.create');
+Route::post('/visit', [VisitorRequestController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('visit.store');
+Route::get('/visit/status', [VisitorRequestController::class, 'status'])
+    ->middleware('throttle:30,1')
+    ->name('visit.status');
+// Signature images, scoped to the visitor's own (secret) reference.
+Route::get('/visit/status/{reference}/signature/{which}', [VisitorRequestController::class, 'publicSignature'])
+    ->whereIn('which', ['visitor', 'approver'])
+    ->middleware('throttle:60,1')
+    ->name('visit.signature');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
@@ -37,6 +53,15 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::middleware(['auth', 'verified', 'module.access'])->group(function () {
     Route::get('/visitors', [VisitorController::class, 'index'])->name('visitors.index');
     Route::get('/badges', [VisitorController::class, 'badges'])->name('badges.index');
+
+    // Staff review queue for public /visit submissions (Front Desk module).
+    Route::get('/visitor-requests', [VisitorRequestController::class, 'index'])->name('visitor-requests.index');
+    Route::get('/visitor-requests/{visitorRequest}/signature/{which}', [VisitorRequestController::class, 'signature'])
+        ->whereIn('which', ['visitor', 'approver'])
+        ->name('visitor-requests.signature');
+    Route::post('/visitor-requests/{visitorRequest}/approve', [VisitorRequestController::class, 'approve'])->name('visitor-requests.approve');
+    Route::patch('/visitor-requests/{visitorRequest}/decline', [VisitorRequestController::class, 'decline'])->name('visitor-requests.decline');
+    Route::delete('/visitor-requests/{visitorRequest}', [VisitorRequestController::class, 'destroy'])->name('visitor-requests.destroy');
     Route::post('/visitors', [VisitorController::class, 'store'])->name('visitors.store');
     Route::get('/visitors/scan', [VisitorController::class, 'scan'])->name('visitors.scan');
     Route::post('/visitors/scan', [VisitorController::class, 'scanCheckout'])->name('visitors.scan-checkout');
@@ -108,6 +133,9 @@ Route::middleware(['auth', 'verified', 'module.access'])->group(function () {
 
 // Admin-only team / user management.
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
+    // Manual retention clean-up for visitor requests (destructive → admin-only).
+    Route::post('/visitor-requests/prune', [VisitorRequestController::class, 'prune'])->name('visitor-requests.prune');
+
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');

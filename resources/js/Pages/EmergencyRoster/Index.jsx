@@ -169,6 +169,7 @@ export default function EmergencyRoster({ visitors, employees, counts, generated
                             {counts.companions > 0 && ` (+${counts.companions} with them)`}
                         </span>
                     </div>
+                    <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                         <thead>
                             <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -229,6 +230,7 @@ export default function EmergencyRoster({ visitors, employees, counts, generated
                             )}
                         </tbody>
                     </table>
+                    </div>
                 </section>
 
                 {/* Employees */}
@@ -241,6 +243,7 @@ export default function EmergencyRoster({ visitors, employees, counts, generated
                             {counts.employees}
                         </span>
                     </div>
+                    <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                         <thead>
                             <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -287,6 +290,7 @@ export default function EmergencyRoster({ visitors, employees, counts, generated
                             )}
                         </tbody>
                     </table>
+                    </div>
                 </section>
 
                 {/* Print footer / sign-off */}

@@ -360,15 +360,7 @@ export default function Show({ visitor, visits }) {
                         </div>
 
                         <div className="mt-5 space-y-2">
-                            {visitor.status !== 'checked_in' ? (
-                                <button
-                                    type="button"
-                                    onClick={openCheckIn}
-                                    className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-                                >
-                                    Check in
-                                </button>
-                            ) : (
+                            {visitor.status === 'checked_in' ? (
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -379,6 +371,25 @@ export default function Show({ visitor, visits }) {
                                     className="w-full rounded-lg bg-gray-800 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-700"
                                 >
                                     Check out
+                                </button>
+                            ) : visitor.status === 'expected' ? (
+                                <button
+                                    type="button"
+                                    onClick={openCheckIn}
+                                    className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                                >
+                                    Check in
+                                </button>
+                            ) : (
+                                // checked_out — visit complete; offer a de-emphasized
+                                // re-admit that opens a fresh visit for a returning visitor.
+                                <button
+                                    type="button"
+                                    onClick={openCheckIn}
+                                    title="Start a new visit for this returning visitor"
+                                    className="w-full rounded-lg border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50"
+                                >
+                                    Check in again
                                 </button>
                             )}
                             <Link

@@ -24,6 +24,7 @@ class User extends Authenticatable
         'password',
         'is_admin',
         'module_access',
+        'module_write',
     ];
 
     /**
@@ -48,14 +49,25 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'module_access' => 'array',
+            'module_write' => 'array',
         ];
     }
 
     /**
-     * Whether this user may access the given module key. Admins get everything.
+     * Whether this user may access (view) the given module key. Admins get
+     * everything.
      */
     public function canAccessModule(string $module): bool
     {
         return $this->is_admin || in_array($module, $this->module_access ?? [], true);
+    }
+
+    /**
+     * Whether this user may write (create/edit) within the given module. Only
+     * relevant for modules that split view vs write; admins get everything.
+     */
+    public function canWriteModule(string $module): bool
+    {
+        return $this->is_admin || in_array($module, $this->module_write ?? [], true);
     }
 }

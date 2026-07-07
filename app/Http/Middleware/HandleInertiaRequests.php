@@ -40,6 +40,14 @@ class HandleInertiaRequests extends Middleware
                         ? Modules::keys()
                         : ($request->user()->module_access ?? []))
                     : [],
+                // Modules the current user may write to (all writable ones for
+                // admins). Read routes ignore this; write-gated pages use it to
+                // hide create/edit controls.
+                'moduleWrite' => $request->user()
+                    ? ($request->user()->is_admin
+                        ? Modules::writableKeys()
+                        : ($request->user()->module_write ?? []))
+                    : [],
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

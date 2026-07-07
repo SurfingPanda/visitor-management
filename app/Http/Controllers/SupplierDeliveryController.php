@@ -51,12 +51,13 @@ class SupplierDeliveryController extends Controller
             fwrite($out, "\xEF\xBB\xBF");
 
             fputcsv($out, [
-                'DELIVERY DATE', 'SUPPLIER', 'PLATE NO.', 'DR #', 'ITEMS', 'QTY',
+                'ID #', 'DELIVERY DATE', 'SUPPLIER', 'PLATE NO.', 'DR #', 'ITEMS', 'QTY',
                 'RECEIVED BY', 'STATUS', 'CHECKED IN', 'CHECKED OUT',
             ]);
 
             foreach ($deliveries as $d) {
                 fputcsv($out, [
+                    $d->reference,
                     $d->delivery_date?->format('Y-m-d'),
                     $d->supplier_name,
                     $d->plate_number,
@@ -115,6 +116,12 @@ class SupplierDeliveryController extends Controller
                         ->orWhere('dr_number', 'like', "%{$search}%")
                         ->orWhere('received_by', 'like', "%{$search}%")
                         ->orWhereHas('items', fn ($i) => $i->where('name', 'like', "%{$search}%"));
+
+                    // Allow lookup by reference code, e.g. "SUP-0000000042" or
+                    // just "42" — the numeric part maps to the primary key.
+                    if (preg_match('/^(?:sup)?-?0*(\d+)$/i', trim($search), $m)) {
+                        $q->orWhere('id', (int) $m[1]);
+                    }
                 });
             })
             ->when(

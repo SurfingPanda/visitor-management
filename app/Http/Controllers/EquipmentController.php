@@ -31,6 +31,12 @@ class EquipmentController extends Controller
                         ->orWhere('disposed_by', 'like', "%{$search}%")
                         ->orWhere('approved_by', 'like', "%{$search}%")
                         ->orWhere('notes', 'like', "%{$search}%");
+
+                    // Allow lookup by reference code, e.g. "EQP-0000000042" or
+                    // just "42" — the numeric part maps to the primary key.
+                    if (preg_match('/^(?:eqp)?-?0*(\d+)$/i', trim($search), $m)) {
+                        $q->orWhere('id', (int) $m[1]);
+                    }
                 });
             })
             ->when(

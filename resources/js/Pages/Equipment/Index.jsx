@@ -500,7 +500,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search name, disposed/approved by…"
+                                placeholder="Search ID, name, disposed/approved by…"
                                 className="block w-full rounded-lg border-gray-300 py-2.5 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
@@ -565,6 +565,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                         <table className="min-w-full divide-y divide-gray-100 text-sm">
                             <thead>
                                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                    <th className="px-6 py-3">ID #</th>
                                     <th className="px-6 py-3">Equipment</th>
                                     <th className="px-6 py-3">Quantity</th>
                                     <th className="px-6 py-3">Price</th>
@@ -578,6 +579,11 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                             <tbody className="divide-y divide-gray-50">
                                 {equipment.data.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50/70">
+                                        <td className="whitespace-nowrap px-6 py-3">
+                                            <span className="font-mono text-[11px] font-medium tracking-wide text-indigo-500">
+                                                {item.reference}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-3">
                                             <div className="flex items-center gap-3">
                                                 <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-gray-100 bg-gray-50">
@@ -661,7 +667,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                                 {equipment.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={8}
+                                            colSpan={9}
                                             className="px-6 py-12 text-center text-gray-400"
                                         >
                                             No equipment yet. Add one to get started.

@@ -77,6 +77,7 @@
             overflow-wrap: break-word;
         }
         tbody tr:nth-child(even) { background: #f6f7f9; }
+        .ref { font-family: 'Courier New', monospace; font-size: 10.5px; font-weight: 600; color: #4f46e5; white-space: nowrap; }
         .supplier { font-weight: 600; color: #111827; }
         .muted { color: #9ca3af; font-size: 10.5px; }
         .num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -166,17 +167,19 @@
 
         <table>
             <colgroup>
-                <col style="width: 10%">  {{-- Delivery date --}}
-                <col style="width: 19%">  {{-- Supplier --}}
-                <col style="width: 10%">  {{-- DR # --}}
-                <col style="width: 21%">  {{-- Items --}}
+                <col style="width: 8%">   {{-- ID # --}}
+                <col style="width: 9%">   {{-- Delivery date --}}
+                <col style="width: 15%">  {{-- Supplier --}}
+                <col style="width: 9%">   {{-- DR # --}}
+                <col style="width: 18%">  {{-- Items --}}
                 <col style="width: 6%">   {{-- Qty --}}
-                <col style="width: 14%">  {{-- Received by --}}
-                <col style="width: 10%">  {{-- Checked in --}}
-                <col style="width: 10%">  {{-- Checked out --}}
+                <col style="width: 13%">  {{-- Received by --}}
+                <col style="width: 11%">  {{-- Checked in --}}
+                <col style="width: 11%">  {{-- Checked out --}}
             </colgroup>
             <thead>
                 <tr>
+                    <th>ID #</th>
                     <th>Delivery date</th>
                     <th>Supplier</th>
                     <th>DR #</th>
@@ -190,6 +193,7 @@
             <tbody>
                 @forelse ($deliveries as $d)
                     <tr>
+                        <td class="ref">{{ $d->reference }}</td>
                         <td>{{ $d->delivery_date?->format('M j, Y') ?? '—' }}</td>
                         <td>
                             <div class="supplier">{{ $d->supplier_name }}</div>
@@ -209,7 +213,7 @@
                         <td>{{ $d->checked_out_at?->copy()->setTimezone($tz)->format('M j, g:i A') ?? '—' }}</td>
                     </tr>
                 @empty
-                    <tr><td colspan="8" class="empty">No deliveries match this range.</td></tr>
+                    <tr><td colspan="9" class="empty">No deliveries match this range.</td></tr>
                 @endforelse
             </tbody>
         </table>

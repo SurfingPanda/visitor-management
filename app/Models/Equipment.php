@@ -26,7 +26,7 @@ class Equipment extends Model
         'registrant_name',
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'reference'];
 
     protected function casts(): array
     {
@@ -35,6 +35,17 @@ class Equipment extends Model
             'price' => 'decimal:2',
             'disposed_at' => 'date',
         ];
+    }
+
+    /**
+     * Human-readable reference code, e.g. EQP-0000000042. Derived from the
+     * primary key so it is stable and unique per record.
+     */
+    protected function reference(): Attribute
+    {
+        return Attribute::get(
+            fn () => sprintf('EQP-%010d', $this->id ?? 0),
+        );
     }
 
     protected function imageUrl(): Attribute

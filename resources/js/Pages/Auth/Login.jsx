@@ -192,7 +192,23 @@ export default function Login({ status, canResetPassword }) {
                 </button>
             </form>
 
-            <p className="mt-8 text-center text-xs text-gray-400">
+            {/* Visitor self-registration */}
+            <div className="mt-8 border-t border-gray-100 pt-6 text-center">
+                <p className="text-sm text-gray-500">Here to visit?</p>
+                <a
+                    href={route('visit.create')}
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+                >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M19 8v6M22 11h-6" />
+                    </svg>
+                    Register as a visitor
+                </a>
+            </div>
+
+            <p className="mt-6 text-center text-xs text-gray-400">
                 Authorized personnel only · Contact an administrator for access
             </p>
         </GuestLayout>

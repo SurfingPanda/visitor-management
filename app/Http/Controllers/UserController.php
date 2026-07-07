@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         return Inertia::render('Users/Index', [
             'users' => User::orderBy('name')->get([
-                'id', 'name', 'email', 'is_admin', 'module_access', 'created_at',
+                'id', 'name', 'email', 'is_admin', 'module_access', 'module_write', 'created_at',
             ]),
             'modules' => Modules::options(),
         ]);
@@ -33,9 +33,12 @@ class UserController extends Controller
             'is_admin' => ['boolean'],
             'module_access' => ['array'],
             'module_access.*' => [Rule::in(Modules::keys())],
+            'module_write' => ['array'],
+            'module_write.*' => [Rule::in(Modules::writableKeys())],
         ]);
 
         $isAdmin = $request->boolean('is_admin');
+        $access = $isAdmin ? [] : array_values($validated['module_access'] ?? []);
 
         User::create([
             'name' => $validated['name'],
@@ -43,7 +46,8 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
             'is_admin' => $isAdmin,
             // Admins get everything implicitly, so store no explicit grants.
-            'module_access' => $isAdmin ? [] : array_values($validated['module_access'] ?? []),
+            'module_access' => $access,
+            'module_write' => $isAdmin ? [] : $this->writeGrants($validated['module_write'] ?? [], $access),
             'email_verified_at' => now(),
         ]);
 
@@ -59,6 +63,8 @@ class UserController extends Controller
             'is_admin' => ['boolean'],
             'module_access' => ['array'],
             'module_access.*' => [Rule::in(Modules::keys())],
+            'module_write' => ['array'],
+            'module_write.*' => [Rule::in(Modules::writableKeys())],
         ]);
 
         // Guard against an admin locking themselves out of admin.
@@ -66,11 +72,14 @@ class UserController extends Controller
             ? true
             : $request->boolean('is_admin');
 
+        $access = $isAdmin ? [] : array_values($validated['module_access'] ?? []);
+
         $user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'is_admin' => $isAdmin,
-            'module_access' => $isAdmin ? [] : array_values($validated['module_access'] ?? []),
+            'module_access' => $access,
+            'module_write' => $isAdmin ? [] : $this->writeGrants($validated['module_write'] ?? [], $access),
         ]);
 
         if (! empty($validated['password'])) {
@@ -80,6 +89,19 @@ class UserController extends Controller
         $user->save();
 
         return back()->with('success', "{$user->name}'s access updated.");
+    }
+
+    /**
+     * Write grants only make sense for modules the user can also view, so
+     * intersect the requested write keys with the granted access keys.
+     *
+     * @param  list<string>  $write
+     * @param  list<string>  $access
+     * @return list<string>
+     */
+    private function writeGrants(array $write, array $access): array
+    {
+        return array_values(array_intersect($write, $access));
     }
 
     public function destroy(Request $request, User $user): RedirectResponse

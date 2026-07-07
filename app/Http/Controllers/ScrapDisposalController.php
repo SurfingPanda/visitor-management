@@ -31,6 +31,12 @@ class ScrapDisposalController extends Controller
                         ->orWhere('category', 'like', "%{$search}%")
                         ->orWhere('recipient', 'like', "%{$search}%")
                         ->orWhereHas('items', fn ($i) => $i->where('name', 'like', "%{$search}%"));
+
+                    // Allow lookup by system reference, e.g. "SCR-0000000042"
+                    // or just "42" — the numeric part maps to the primary key.
+                    if (preg_match('/^(?:scr)?-?0*(\d+)$/i', trim($search), $m)) {
+                        $q->orWhere('id', (int) $m[1]);
+                    }
                 });
             })
             ->when(

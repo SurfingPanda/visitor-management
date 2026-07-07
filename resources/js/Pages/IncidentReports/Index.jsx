@@ -225,7 +225,10 @@ function IncidentPrintForm({ report }) {
                 </tbody>
             </table>
 
-            <div className="ir-control">Control No. BW-HRD-SF-11</div>
+            <div className="ir-control">
+                Report No. {report.reference} &nbsp;|&nbsp; Control No.
+                BW-HRD-SF-11
+            </div>
         </div>
     );
 }
@@ -405,7 +408,11 @@ function ReportFields({ form, toggleCategory }) {
 /* ---------- page ---------- */
 
 export default function IncidentReportsIndex({ reports, filters, counts }) {
-    const flash = usePage().props.flash;
+    const page = usePage().props;
+    const flash = page.flash;
+    // View-only users (granted the module without the write sub-grant) can read
+    // and print but not create, edit, or change status.
+    const canWrite = (page.auth?.moduleWrite ?? []).includes('incidents');
     const [search, setSearch] = useState(filters.search ?? '');
     const [toast, setToast] = useState(null);
     const [creating, setCreating] = useState(false);
@@ -702,7 +709,7 @@ export default function IncidentReportsIndex({ reports, filters, counts }) {
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search title, location, people…"
+                                placeholder="Search ref, title, location, people…"
                                 className="block w-full rounded-lg border-gray-300 py-2.5 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                             />
                         </div>
@@ -717,16 +724,18 @@ export default function IncidentReportsIndex({ reports, filters, counts }) {
                             </svg>
                             Template (.docx)
                         </a>
-                        <button
-                            type="button"
-                            onClick={() => setCreating(true)}
-                            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-                        >
-                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 5v14M5 12h14" />
-                            </svg>
-                            New report
-                        </button>
+                        {canWrite && (
+                            <button
+                                type="button"
+                                onClick={() => setCreating(true)}
+                                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                            >
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                New report
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -736,6 +745,7 @@ export default function IncidentReportsIndex({ reports, filters, counts }) {
                         <table className="min-w-full divide-y divide-gray-100 text-sm">
                             <thead>
                                 <tr className="text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                    <th className="px-6 py-3">ID #</th>
                                     <th className="px-6 py-3">Report</th>
                                     <th className="px-6 py-3">Type</th>
                                     <th className="px-6 py-3">Severity</th>
@@ -748,6 +758,11 @@ export default function IncidentReportsIndex({ reports, filters, counts }) {
                             <tbody className="divide-y divide-gray-50">
                                 {reports.data.map((r) => (
                                     <tr key={r.id} className="hover:bg-gray-50/70">
+                                        <td className="whitespace-nowrap px-6 py-3">
+                                            <span className="font-mono text-[11px] font-medium tracking-wide text-indigo-500">
+                                                {r.reference}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-3">
                                             <div className="font-medium text-gray-900">
                                                 {r.title}
@@ -793,19 +808,21 @@ export default function IncidentReportsIndex({ reports, filters, counts }) {
                                                 >
                                                     View
                                                 </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => openEdit(r)}
-                                                    disabled={r.status === 'resolved'}
-                                                    title={
-                                                        r.status === 'resolved'
-                                                            ? 'Resolved reports are locked. Reopen to edit.'
-                                                            : undefined
-                                                    }
-                                                    className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-gray-50"
-                                                >
-                                                    Edit
-                                                </button>
+                                                {canWrite && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEdit(r)}
+                                                        disabled={r.status === 'resolved'}
+                                                        title={
+                                                            r.status === 'resolved'
+                                                                ? 'Resolved reports are locked. Reopen to edit.'
+                                                                : undefined
+                                                        }
+                                                        className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 disabled:hover:bg-gray-50"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -813,7 +830,7 @@ export default function IncidentReportsIndex({ reports, filters, counts }) {
                                 {reports.data.length === 0 && (
                                     <tr>
                                         <td
-                                            colSpan={7}
+                                            colSpan={8}
                                             className="px-6 py-12 text-center text-gray-400"
                                         >
                                             No reports match your filters.
@@ -976,10 +993,16 @@ export default function IncidentReportsIndex({ reports, filters, counts }) {
                                 </label>
                                 <select
                                     value={selected.status}
+                                    disabled={!canWrite}
                                     onChange={(e) =>
                                         changeStatus(selected, e.target.value)
                                     }
-                                    className="rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    title={
+                                        canWrite
+                                            ? undefined
+                                            : 'You have view-only access to incident reports.'
+                                    }
+                                    className="rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500"
                                 >
                                     <option value="open">Open</option>
                                     <option value="under_review">

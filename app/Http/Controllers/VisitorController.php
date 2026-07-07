@@ -271,11 +271,14 @@ class VisitorController extends Controller
     }
 
     /**
-     * Scan a badge QR (or type its code) to check the visitor out.
+     * Scan a badge QR (or type its code) to check a visitor in or out. The guard
+     * picks the mode explicitly ('in' on arrival, 'out' on departure) so an
+     * accidental double-scan is a no-op instead of flipping the visitor's state.
      */
     public function scanCheckout(Request $request): RedirectResponse
     {
         $code = trim($request->string('code')->toString());
+        $mode = $request->string('mode')->toString() === 'out' ? 'out' : 'in';
 
         $visitor = Visitor::query()
             ->where('qr_token', $code)
@@ -286,17 +289,24 @@ class VisitorController extends Controller
             return back()->with('error', 'Badge not recognized. Please try again.');
         }
 
-        if ($visitor->status === 'checked_out') {
-            return back()->with('error', "{$visitor->name} is already checked out.");
+        if ($mode === 'out') {
+            if ($visitor->status !== 'checked_in') {
+                return back()->with('error', "{$visitor->name} is not currently on-site.");
+            }
+
+            $visitor->recordCheckOut();
+
+            return back()->with('success', "{$visitor->name} checked out.");
         }
 
-        if ($visitor->status !== 'checked_in') {
-            return back()->with('error', "{$visitor->name} is not currently on-site.");
+        // Check in.
+        if ($visitor->status === 'checked_in') {
+            return back()->with('error', "{$visitor->name} is already checked in.");
         }
 
-        $visitor->recordCheckOut();
+        $visitor->recordCheckIn();
 
-        return back()->with('success', "{$visitor->name} checked out.");
+        return back()->with('success', "{$visitor->name} checked in.");
     }
 
     public function checkIn(Request $request, Visitor $visitor): RedirectResponse

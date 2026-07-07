@@ -2,11 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeliveryLog extends Model
 {
+    /**
+     * Expose the derived reference code to arrays/JSON (Inertia props).
+     *
+     * @var list<string>
+     */
+    protected $appends = ['reference'];
+
     protected $fillable = [
         'plate_number',
         'route',
@@ -56,6 +64,17 @@ class DeliveryLog extends Model
             'driver_id' => 'integer',
             'helper_id' => 'integer',
         ];
+    }
+
+    /**
+     * Human-readable reference code, e.g. DEL-0000000042. Derived from the
+     * primary key so it is stable and unique per record.
+     */
+    protected function reference(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => sprintf('DEL-%010d', $this->id ?? 0),
+        );
     }
 
     public function logger(): BelongsTo
