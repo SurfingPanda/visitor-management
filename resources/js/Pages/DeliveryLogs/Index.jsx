@@ -45,6 +45,16 @@ function toDateTimeLocal(value) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// Reverse of toDateTimeLocal: turn a <input type="datetime-local"> value
+// (browser-local wall time, no timezone) into a UTC ISO string so the server
+// stores true UTC and it round-trips back to the same local time on display.
+// Empty stays empty so the server's now() default still applies.
+function fromDateTimeLocal(value) {
+    if (!value) return value;
+    const d = new Date(value); // datetime-local has no tz → parsed as local time
+    return Number.isNaN(d.getTime()) ? value : d.toISOString();
+}
+
 // The item-count fields, in display order.
 const loadItems = [
     { key: 'crates_big', label: 'Crates (big)' },
@@ -395,6 +405,13 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
 
     const submitEdit = (e) => {
         e.preventDefault();
+        // Convert the local date-time inputs to UTC on the wire. transform()
+        // returns undefined in @inertiajs/react — call it as its own statement.
+        editForm.transform((data) => ({
+            ...data,
+            delivery_out: fromDateTimeLocal(data.delivery_out),
+            arrival_plant: fromDateTimeLocal(data.arrival_plant),
+        }));
         editForm.patch(route('delivery-logs.update', editing.id), {
             preserveScroll: true,
             onSuccess: () => setEditing(null),
@@ -403,6 +420,10 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
 
     const submitDelivery = (e) => {
         e.preventDefault();
+        form.transform((data) => ({
+            ...data,
+            delivery_out: fromDateTimeLocal(data.delivery_out),
+        }));
         form.post(route('delivery-logs.store'), {
             preserveScroll: true,
             onSuccess: () => {
@@ -414,6 +435,10 @@ export default function DeliveryLogsIndex({ deliveries, filters, plates = [], pl
 
     const submitReturn = (e) => {
         e.preventDefault();
+        returnForm.transform((data) => ({
+            ...data,
+            arrival_plant: fromDateTimeLocal(data.arrival_plant),
+        }));
         returnForm.patch(route('delivery-logs.return', returning.id), {
             preserveScroll: true,
             onSuccess: () => {
