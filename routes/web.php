@@ -8,6 +8,7 @@ use App\Http\Controllers\EmergencyRosterController;
 use App\Http\Controllers\EquipmentController;
 use App\Http\Controllers\HelperController;
 use App\Http\Controllers\IncidentReportController;
+use App\Http\Controllers\PackageDeliveryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScrapDisposalController;
@@ -69,6 +70,14 @@ Route::middleware(['auth', 'verified', 'module.access'])->group(function () {
     Route::patch('/visitors/{visitor}', [VisitorController::class, 'update'])->name('visitors.update');
     Route::patch('/visitors/{visitor}/check-in', [VisitorController::class, 'checkIn'])->name('visitors.check-in');
     Route::patch('/visitors/{visitor}/check-out', [VisitorController::class, 'checkOut'])->name('visitors.check-out');
+
+    // Package / courier deliveries for employees (Front Desk module).
+    Route::get('/package-deliveries', [PackageDeliveryController::class, 'index'])->name('package-deliveries.index');
+    Route::post('/package-deliveries', [PackageDeliveryController::class, 'store'])->name('package-deliveries.store');
+    Route::get('/package-deliveries/{packageDelivery}/signature', [PackageDeliveryController::class, 'signature'])->name('package-deliveries.signature');
+    Route::patch('/package-deliveries/{packageDelivery}/receive', [PackageDeliveryController::class, 'markReceived'])->name('package-deliveries.receive');
+    Route::patch('/package-deliveries/{packageDelivery}', [PackageDeliveryController::class, 'update'])->name('package-deliveries.update');
+    Route::delete('/package-deliveries/{packageDelivery}', [PackageDeliveryController::class, 'destroy'])->name('package-deliveries.destroy');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');

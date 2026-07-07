@@ -27,7 +27,7 @@ class Modules
         ],
         'front_desk' => [
             'label' => 'Front Desk (Visitors, Scan, Badges)',
-            'prefixes' => ['visitors.', 'badges.', 'visitor-requests.'],
+            'prefixes' => ['visitors.', 'badges.', 'visitor-requests.', 'package-deliveries.'],
         ],
         'incidents' => [
             'label' => 'Incident & Accident Reports',
