@@ -14,9 +14,11 @@ class Equipment extends Model
 
     protected $fillable = [
         'name',
+        'asset_tag',
         'quantity',
         'price',
         'image_path',
+        'asset_form_image_path',
         'status',
         'disposed_by',
         'approved_by',
@@ -26,7 +28,7 @@ class Equipment extends Model
         'registrant_name',
     ];
 
-    protected $appends = ['image_url', 'reference'];
+    protected $appends = ['image_url', 'asset_form_image_url', 'reference'];
 
     protected function casts(): array
     {
@@ -55,6 +57,13 @@ class Equipment extends Model
         // rather than the hardcoded APP_URL host.
         return Attribute::get(
             fn () => $this->image_path ? '/storage/'.$this->image_path : null,
+        );
+    }
+
+    protected function assetFormImageUrl(): Attribute
+    {
+        return Attribute::get(
+            fn () => $this->asset_form_image_path ? '/storage/'.$this->asset_form_image_path : null,
         );
     }
 

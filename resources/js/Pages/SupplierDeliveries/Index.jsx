@@ -2,7 +2,7 @@ import InputError from '@/Components/InputError';
 import Modal from '@/Components/Modal';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /* ---------- helpers ---------- */
 
@@ -278,8 +278,138 @@ const emptyForm = {
     delivery_date: '',
     received_by: '',
     notes: '',
+    dr_image: null,
     items: [{ ...emptyItem }],
 };
+
+/* ---------- DR image upload ---------- */
+
+// Downscale a chosen photo to a modest JPEG File before upload so phone
+// snapshots don't balloon the request (the server also caps at 10 MB). Returns
+// the original file untouched if it's already small or not a raster image.
+async function downscaleImage(file, maxDim = 1600, quality = 0.82) {
+    if (!file || !file.type?.startsWith('image/')) return file;
+
+    const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+
+    const img = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = dataUrl;
+    });
+
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    if (scale === 1 && file.size < 1_500_000) return file;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const blob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, 'image/jpeg', quality),
+    );
+    if (!blob) return file;
+
+    const base = (file.name || 'dr-image').replace(/\.[^.]+$/, '');
+    return new File([blob], `${base}.jpg`, { type: 'image/jpeg' });
+}
+
+// Upload widget for the delivery-receipt photo. Shows the newly picked image,
+// or the existing one on edit; picking a new file replaces it on save.
+function DrImageField({ form, existingImageUrl }) {
+    const inputRef = useRef(null);
+    const [preview, setPreview] = useState(null);
+    const file = form.data.dr_image;
+
+    // Object URL for the freshly chosen file; revoke it when it changes.
+    useEffect(() => {
+        if (file instanceof File) {
+            const url = URL.createObjectURL(file);
+            setPreview(url);
+            return () => URL.revokeObjectURL(url);
+        }
+        setPreview(null);
+    }, [file]);
+
+    const onPick = async (e) => {
+        const picked = e.target.files?.[0];
+        if (!picked) return;
+        form.setData('dr_image', await downscaleImage(picked));
+    };
+
+    const clear = () => {
+        form.setData('dr_image', null);
+        if (inputRef.current) inputRef.current.value = '';
+    };
+
+    const shownUrl = preview ?? existingImageUrl ?? null;
+
+    return (
+        <div className="sm:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+                DR image
+            </label>
+            <div className="flex items-start gap-4">
+                <div className="flex h-28 w-40 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                    {shownUrl ? (
+                        <img
+                            src={shownUrl}
+                            alt="Delivery receipt"
+                            className="h-full w-full object-cover"
+                        />
+                    ) : (
+                        <svg className="h-8 w-8 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <path d="m21 15-5-5L5 21" />
+                        </svg>
+                    )}
+                </div>
+                <div className="flex flex-col gap-2">
+                    <input
+                        ref={inputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={onPick}
+                        className="hidden"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => inputRef.current?.click()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                    >
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <path d="M17 8l-5-5-5 5" />
+                            <path d="M12 3v12" />
+                        </svg>
+                        {shownUrl ? 'Change image' : 'Upload image'}
+                    </button>
+                    {preview && (
+                        <button
+                            type="button"
+                            onClick={clear}
+                            className="text-left text-xs font-semibold text-red-600 hover:text-red-700"
+                        >
+                            Remove selection
+                        </button>
+                    )}
+                    <p className="text-xs text-gray-400">
+                        Photo of the delivery receipt. JPG or PNG, auto-resized.
+                    </p>
+                </div>
+            </div>
+            <InputError message={form.errors.dr_image} className="mt-1" />
+        </div>
+    );
+}
 
 /* ---------- items editor ---------- */
 
@@ -417,7 +547,7 @@ function ItemsEditor({ form }) {
 
 /* ---------- shared form fields ---------- */
 
-function DeliveryFields({ form }) {
+function DeliveryFields({ form, existingImageUrl }) {
     return (
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
             <div>
@@ -504,6 +634,8 @@ function DeliveryFields({ form }) {
                 />
                 <InputError message={form.errors.notes} className="mt-1" />
             </div>
+
+            <DrImageField form={form} existingImageUrl={existingImageUrl} />
         </div>
     );
 }
@@ -597,6 +729,7 @@ export default function SupplierDeliveriesIndex({
                 : '',
             received_by: item.received_by ?? '',
             notes: item.notes ?? '',
+            dr_image: null,
             items:
                 item.items && item.items.length
                     ? item.items.map((it) => ({
@@ -1055,6 +1188,27 @@ export default function SupplierDeliveriesIndex({
                                 />
                             </dl>
 
+                            {viewing.dr_image_url && (
+                                <div className="mt-6">
+                                    <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">
+                                        Delivery receipt
+                                    </h3>
+                                    <a
+                                        href={viewing.dr_image_url}
+                                        target="_blank"
+                                        rel="noopener"
+                                        title="Open full size"
+                                        className="block overflow-hidden rounded-xl border border-gray-100"
+                                    >
+                                        <img
+                                            src={viewing.dr_image_url}
+                                            alt="Delivery receipt"
+                                            className="max-h-96 w-full bg-gray-50 object-contain"
+                                        />
+                                    </a>
+                                </div>
+                            )}
+
                             {viewing.items?.length > 0 && (
                                 <div className="mt-6">
                                     <div className="mb-2 flex items-center gap-2">
@@ -1217,7 +1371,10 @@ export default function SupplierDeliveriesIndex({
                         </p>
                     </div>
                     <div className="flex-1 overflow-y-auto px-6 py-5">
-                        <DeliveryFields form={editForm} />
+                        <DeliveryFields
+                            form={editForm}
+                            existingImageUrl={editing?.dr_image_url}
+                        />
                     </div>
                     <div className="flex shrink-0 justify-end gap-3 border-t border-gray-100 px-6 py-4">
                         <button

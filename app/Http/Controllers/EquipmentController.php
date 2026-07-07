@@ -28,6 +28,7 @@ class EquipmentController extends Controller
             ->when($filters['search'], function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('asset_tag', 'like', "%{$search}%")
                         ->orWhere('disposed_by', 'like', "%{$search}%")
                         ->orWhere('approved_by', 'like', "%{$search}%")
                         ->orWhere('notes', 'like', "%{$search}%");
@@ -72,6 +73,11 @@ class EquipmentController extends Controller
             : null;
         unset($data['image']);
 
+        $data['asset_form_image_path'] = $request->hasFile('asset_form_image')
+            ? $request->file('asset_form_image')->store('equipment-asset-forms', 'public')
+            : null;
+        unset($data['asset_form_image']);
+
         Equipment::create([
             ...$data,
             'registered_by' => $request->user()->id,
@@ -95,6 +101,14 @@ class EquipmentController extends Controller
         }
         unset($data['image']);
 
+        if ($request->hasFile('asset_form_image')) {
+            if ($equipment->asset_form_image_path) {
+                Storage::disk('public')->delete($equipment->asset_form_image_path);
+            }
+            $data['asset_form_image_path'] = $request->file('asset_form_image')->store('equipment-asset-forms', 'public');
+        }
+        unset($data['asset_form_image']);
+
         $equipment->update($data);
 
         return back()->with('success', 'Equipment updated.');
@@ -102,8 +116,10 @@ class EquipmentController extends Controller
 
     public function destroy(Equipment $equipment): RedirectResponse
     {
-        if ($equipment->image_path) {
-            Storage::disk('public')->delete($equipment->image_path);
+        foreach ([$equipment->image_path, $equipment->asset_form_image_path] as $path) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
         }
 
         $equipment->delete();
@@ -118,6 +134,7 @@ class EquipmentController extends Controller
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'asset_tag' => ['nullable', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
             'price' => ['nullable', 'numeric', 'min:0', 'max:999999999.99'],
             'status' => ['required', Rule::in(self::STATUSES)],
@@ -125,7 +142,9 @@ class EquipmentController extends Controller
             'approved_by' => ['nullable', 'string', 'max:255'],
             'disposed_at' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'max:10240'], // ≤ 10 MB (uploads are downscaled client-side)
+            // Both images are ≤ 10 MB; uploads are downscaled client-side.
+            'image' => ['nullable', 'image', 'max:10240'],
+            'asset_form_image' => ['nullable', 'image', 'max:10240'],
         ]);
     }
 }

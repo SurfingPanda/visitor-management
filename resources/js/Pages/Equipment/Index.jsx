@@ -73,6 +73,7 @@ const BoxIcon = (
 
 const emptyForm = {
     name: '',
+    asset_tag: '',
     quantity: 1,
     price: '',
     status: 'in_stock',
@@ -81,6 +82,7 @@ const emptyForm = {
     disposed_at: '',
     notes: '',
     image: null,
+    asset_form_image: null,
 };
 
 /* ---------- image input ---------- */
@@ -175,10 +177,15 @@ function ImageInput({ file, existingUrl, onChange }) {
 
 /* ---------- shared form fields ---------- */
 
-function EquipmentFields({ form, statuses, existingImageUrl }) {
+function EquipmentFields({
+    form,
+    statuses,
+    existingImageUrl,
+    existingAssetFormImageUrl,
+}) {
     return (
         <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+            <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                     Equipment name <span className="text-red-500">*</span>
                 </label>
@@ -192,6 +199,20 @@ function EquipmentFields({ form, statuses, existingImageUrl }) {
                 <InputError message={form.errors.name} className="mt-1" />
             </div>
 
+            <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Asset Tag #
+                </label>
+                <input
+                    type="text"
+                    value={form.data.asset_tag}
+                    onChange={(e) => form.setData('asset_tag', e.target.value)}
+                    placeholder="e.g. ELJ-2026-0042"
+                    className="block w-full rounded-lg border-gray-300 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+                <InputError message={form.errors.asset_tag} className="mt-1" />
+            </div>
+
             <div className="sm:col-span-2">
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                     Equipment image
@@ -202,6 +223,21 @@ function EquipmentFields({ form, statuses, existingImageUrl }) {
                     onChange={(f) => form.setData('image', f)}
                 />
                 <InputError message={form.errors.image} className="mt-1" />
+            </div>
+
+            <div className="sm:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Asset form image
+                </label>
+                <ImageInput
+                    file={form.data.asset_form_image}
+                    existingUrl={existingAssetFormImageUrl}
+                    onChange={(f) => form.setData('asset_form_image', f)}
+                />
+                <InputError
+                    message={form.errors.asset_form_image}
+                    className="mt-1"
+                />
             </div>
 
             <div>
@@ -405,6 +441,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
         editForm.clearErrors();
         editForm.setData({
             name: item.name ?? '',
+            asset_tag: item.asset_tag ?? '',
             quantity: item.quantity ?? 0,
             price: item.price ?? '',
             status: item.status ?? 'in_stock',
@@ -415,6 +452,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                 : '',
             notes: item.notes ?? '',
             image: null,
+            asset_form_image: null,
         });
         setEditing(item);
     };
@@ -762,6 +800,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                             </div>
 
                             <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+                                <Detail label="Asset Tag #" value={viewing.asset_tag} />
                                 <Detail label="Quantity" value={viewing.quantity} />
                                 <Detail label="Price" value={formatPrice(viewing.price)} />
                                 <Detail
@@ -788,6 +827,27 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                                     }
                                 />
                             </dl>
+
+                            {viewing.asset_form_image_url && (
+                                <div className="mt-6">
+                                    <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">
+                                        Asset form
+                                    </h3>
+                                    <a
+                                        href={viewing.asset_form_image_url}
+                                        target="_blank"
+                                        rel="noopener"
+                                        title="Open full size"
+                                        className="block overflow-hidden rounded-xl border border-gray-100"
+                                    >
+                                        <img
+                                            src={viewing.asset_form_image_url}
+                                            alt="Asset form"
+                                            className="max-h-96 w-full bg-gray-50 object-contain"
+                                        />
+                                    </a>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
@@ -859,6 +919,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                             form={editForm}
                             statuses={statuses}
                             existingImageUrl={editing?.image_url}
+                            existingAssetFormImageUrl={editing?.asset_form_image_url}
                         />
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
