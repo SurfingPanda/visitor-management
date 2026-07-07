@@ -18,17 +18,12 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\VisitorController;
 use App\Http\Controllers\VisitorRequestController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
+// Secora is an internal tool with no public landing page — send the bare
+// domain straight into the app (dashboard when logged in, login otherwise).
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route(auth()->check() ? 'dashboard' : 'login');
 });
 
 // Public, unauthenticated visitor self-registration. Throttled to curb spam
