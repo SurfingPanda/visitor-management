@@ -13,6 +13,7 @@ class VisitorRequest extends Model
         'reference',
         'name',
         'contact_person',
+        'email',
         'company',
         'signature_path',
         'status',

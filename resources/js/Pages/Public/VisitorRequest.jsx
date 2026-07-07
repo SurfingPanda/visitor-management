@@ -9,6 +9,7 @@ export default function VisitorRequestPage() {
 
     const form = useForm({
         name: '',
+        email: '',
         contact_person: '',
         company: '',
         signature: '',
@@ -124,6 +125,30 @@ export default function VisitorRequestPage() {
                                     {form.errors.name && (
                                         <p className="mt-1 text-xs text-red-600">
                                             {form.errors.name}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Email address{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={form.data.email}
+                                        onChange={(e) =>
+                                            form.setData('email', e.target.value)
+                                        }
+                                        placeholder="you@example.com"
+                                        className={field}
+                                    />
+                                    <p className="mt-1 text-xs text-gray-400">
+                                        We'll email you when your request is approved or declined.
+                                    </p>
+                                    {form.errors.email && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {form.errors.email}
                                         </p>
                                     )}
                                 </div>

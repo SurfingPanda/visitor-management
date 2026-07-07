@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\VisitRequestApproved;
+use App\Mail\VisitRequestDeclined;
 use App\Models\Visitor;
 use App\Models\VisitorRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -77,6 +80,7 @@ class VisitorRequestController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'contact_person' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
             'company' => ['nullable', 'string', 'max:255'],
             'signature' => ['required', 'string'],
         ]);
@@ -111,6 +115,7 @@ class VisitorRequestController extends Controller
         $visitorRequest = VisitorRequest::create([
             'name' => $validated['name'],
             'contact_person' => $validated['contact_person'],
+            'email' => $validated['email'],
             'company' => $company,
             'signature_path' => $signaturePath,
             'status' => 'pending',
@@ -204,6 +209,11 @@ class VisitorRequestController extends Controller
             ]);
         });
 
+        // Notify the visitor with a link back to their pass (queued).
+        if ($visitorRequest->email) {
+            Mail::to($visitorRequest->email)->queue(new VisitRequestApproved($visitorRequest));
+        }
+
         return back()->with('success', "{$visitorRequest->name} approved and added as an expected visitor.");
     }
 
@@ -240,6 +250,11 @@ class VisitorRequestController extends Controller
             'decline_reason' => $validated['reason'] ?? null,
             'declined_by' => $request->user()->id,
         ]);
+
+        // Notify the visitor their request was not approved (queued).
+        if ($visitorRequest->email) {
+            Mail::to($visitorRequest->email)->queue(new VisitRequestDeclined($visitorRequest));
+        }
 
         return back()->with('success', "{$visitorRequest->name}'s request was declined.");
     }
