@@ -8,11 +8,15 @@ import { useEffect, useState } from 'react';
 
 const statusStyles = {
     in_stock: 'bg-green-100 text-green-700 ring-green-600/20',
+    under_repair: 'bg-amber-100 text-amber-700 ring-amber-600/20',
+    transferred: 'bg-blue-100 text-blue-700 ring-blue-600/20',
     disposed: 'bg-gray-100 text-gray-500 ring-gray-500/20',
 };
 
 const statusLabels = {
     in_stock: 'In stock',
+    under_repair: 'Under repair',
+    transferred: 'Transferred',
     disposed: 'Disposed',
 };
 
@@ -213,7 +217,7 @@ function EquipmentFields({
                 <InputError message={form.errors.asset_tag} className="mt-1" />
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                     Equipment image
                 </label>
@@ -225,7 +229,7 @@ function EquipmentFields({
                 <InputError message={form.errors.image} className="mt-1" />
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
                     Asset form image
                 </label>
@@ -302,7 +306,7 @@ function EquipmentFields({
 
             <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Disposal date
+                    Processed date
                 </label>
                 <input
                     type="date"
@@ -315,13 +319,13 @@ function EquipmentFields({
 
             <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Disposed by
+                    Processed by
                 </label>
                 <input
                     type="text"
                     value={form.data.disposed_by}
                     onChange={(e) => form.setData('disposed_by', e.target.value)}
-                    placeholder="Name of who disposed it"
+                    placeholder="Name of who processed it"
                     className="block w-full rounded-lg border-gray-300 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500"
                 />
                 <InputError message={form.errors.disposed_by} className="mt-1" />
@@ -608,7 +612,7 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                                     <th className="px-6 py-3">Quantity</th>
                                     <th className="px-6 py-3">Price</th>
                                     <th className="px-6 py-3">Status</th>
-                                    <th className="px-6 py-3">Disposed by</th>
+                                    <th className="px-6 py-3">Processed by</th>
                                     <th className="px-6 py-3">Approved by</th>
                                     <th className="px-6 py-3">Registered</th>
                                     <th className="px-6 py-3 text-right">Action</th>
@@ -769,19 +773,56 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
             <Modal show={!!viewing} onClose={() => setViewing(null)} maxWidth="2xl">
                 {viewing && (
                     <div>
-                        {/* Full image */}
-                        <div className="flex items-center justify-center bg-gray-50 p-4">
-                            {viewing.image_url ? (
-                                <img
-                                    src={viewing.image_url}
-                                    alt={viewing.name}
-                                    className="max-h-80 w-auto max-w-full rounded-lg object-contain"
-                                />
-                            ) : (
-                                <div className="flex h-40 w-full items-center justify-center">
-                                    {BoxIcon}
-                                </div>
-                            )}
+                        {/* Images side by side */}
+                        <div className="grid grid-cols-1 gap-3 bg-gray-50 p-4 sm:grid-cols-2">
+                            <div>
+                                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">
+                                    Equipment image
+                                </h3>
+                                {viewing.image_url ? (
+                                    <a
+                                        href={viewing.image_url}
+                                        target="_blank"
+                                        rel="noopener"
+                                        title="Open full size"
+                                        className="block overflow-hidden rounded-xl border border-gray-100 bg-white"
+                                    >
+                                        <img
+                                            src={viewing.image_url}
+                                            alt={viewing.name}
+                                            className="max-h-72 w-full object-contain"
+                                        />
+                                    </a>
+                                ) : (
+                                    <div className="flex h-40 w-full items-center justify-center rounded-xl border border-gray-100 bg-white">
+                                        {BoxIcon}
+                                    </div>
+                                )}
+                            </div>
+                            <div>
+                                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">
+                                    Asset form
+                                </h3>
+                                {viewing.asset_form_image_url ? (
+                                    <a
+                                        href={viewing.asset_form_image_url}
+                                        target="_blank"
+                                        rel="noopener"
+                                        title="Open full size"
+                                        className="block overflow-hidden rounded-xl border border-gray-100 bg-white"
+                                    >
+                                        <img
+                                            src={viewing.asset_form_image_url}
+                                            alt="Asset form"
+                                            className="max-h-72 w-full object-contain"
+                                        />
+                                    </a>
+                                ) : (
+                                    <div className="flex h-40 w-full items-center justify-center rounded-xl border border-gray-100 bg-white">
+                                        {BoxIcon}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="p-6">
@@ -807,9 +848,9 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                                     label="Status"
                                     value={statusLabels[viewing.status] ?? viewing.status}
                                 />
-                                <Detail label="Disposed by" value={viewing.disposed_by} />
+                                <Detail label="Processed by" value={viewing.disposed_by} />
                                 <Detail
-                                    label="Disposal date"
+                                    label="Processed date"
                                     value={
                                         viewing.disposed_at
                                             ? formatDate(viewing.disposed_at)
@@ -827,27 +868,6 @@ export default function EquipmentIndex({ equipment, filters, statuses, count }) 
                                     }
                                 />
                             </dl>
-
-                            {viewing.asset_form_image_url && (
-                                <div className="mt-6">
-                                    <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">
-                                        Asset form
-                                    </h3>
-                                    <a
-                                        href={viewing.asset_form_image_url}
-                                        target="_blank"
-                                        rel="noopener"
-                                        title="Open full size"
-                                        className="block overflow-hidden rounded-xl border border-gray-100"
-                                    >
-                                        <img
-                                            src={viewing.asset_form_image_url}
-                                            alt="Asset form"
-                                            className="max-h-96 w-full bg-gray-50 object-contain"
-                                        />
-                                    </a>
-                                </div>
-                            )}
                         </div>
 
                         <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">

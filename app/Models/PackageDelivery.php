@@ -5,16 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PackageDelivery extends Model
 {
     protected $fillable = [
-        'courier',
         'rider_name',
-        'tracking_number',
         'recipient_name',
         'recipient_department',
-        'sender',
         'notes',
         'status',
         'received_at',
@@ -55,6 +53,11 @@ class PackageDelivery extends Model
                 ? route('package-deliveries.signature', ['packageDelivery' => $this->id])
                 : null,
         );
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(PackageDeliveryItem::class);
     }
 
     public function logger(): BelongsTo

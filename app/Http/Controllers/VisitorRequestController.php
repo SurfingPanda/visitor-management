@@ -6,6 +6,7 @@ use App\Models\Visitor;
 use App\Models\VisitorRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -181,25 +182,27 @@ class VisitorRequestController extends Controller
             ]);
         }
 
-        $visitor = Visitor::create([
-            'name' => $visitorRequest->name,
-            'company' => $visitorRequest->company,
-            'host' => $visitorRequest->contact_person,
-            'qr_token' => (string) Str::ulid(),
-            'status' => 'expected',
-        ]);
+        DB::transaction(function () use ($visitorRequest, $approverName, $signaturePath, $request) {
+            $visitor = Visitor::create([
+                'name' => $visitorRequest->name,
+                'company' => $visitorRequest->company,
+                'host' => $visitorRequest->contact_person,
+                'qr_token' => (string) Str::ulid(),
+                'status' => 'expected',
+            ]);
 
-        $visitor->update([
-            'badge_number' => 'VIS-'.date('Y').'-'.str_pad((string) $visitor->id, 9, '0', STR_PAD_LEFT),
-        ]);
+            $visitor->update([
+                'badge_number' => 'VIS-'.date('Y').'-'.str_pad((string) $visitor->id, 9, '0', STR_PAD_LEFT),
+            ]);
 
-        $visitorRequest->update([
-            'status' => 'approved',
-            'approver_name' => $approverName,
-            'approver_signature_path' => $signaturePath,
-            'approved_by' => $request->user()->id,
-            'visitor_id' => $visitor->id,
-        ]);
+            $visitorRequest->update([
+                'status' => 'approved',
+                'approver_name' => $approverName,
+                'approver_signature_path' => $signaturePath,
+                'approved_by' => $request->user()->id,
+                'visitor_id' => $visitor->id,
+            ]);
+        });
 
         return back()->with('success', "{$visitorRequest->name} approved and added as an expected visitor.");
     }

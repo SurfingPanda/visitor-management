@@ -6,6 +6,7 @@ use App\Models\PackageDelivery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -20,13 +21,16 @@ class PackageDeliveryController extends Controller
         $search = $request->string('search')->toString();
 
         $deliveries = PackageDelivery::query()
+            ->with('items')
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('recipient_name', 'like', "%{$search}%")
-                        ->orWhere('courier', 'like', "%{$search}%")
                         ->orWhere('rider_name', 'like', "%{$search}%")
-                        ->orWhere('tracking_number', 'like', "%{$search}%")
-                        ->orWhere('sender', 'like', "%{$search}%");
+                        ->orWhereHas('items', function ($i) use ($search) {
+                            $i->where('tracking_number', 'like', "%{$search}%")
+                                ->orWhere('courier', 'like', "%{$search}%")
+                                ->orWhere('sender', 'like', "%{$search}%");
+                        });
 
                     // Allow lookup by reference code, e.g. "PKG-0000000042" or "42".
                     if (preg_match('/^(?:pkg)?-?0*(\d+)$/i', trim($search), $m)) {
@@ -56,13 +60,19 @@ class PackageDeliveryController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validateDelivery($request);
+        $items = $data['items'];
+        unset($data['items']);
 
-        PackageDelivery::create([
-            ...$data,
-            'status' => 'pending',
-            'logged_by' => $request->user()->id,
-            'logger_name' => $request->user()->name,
-        ]);
+        DB::transaction(function () use ($data, $items, $request) {
+            $delivery = PackageDelivery::create([
+                ...$data,
+                'status' => 'pending',
+                'logged_by' => $request->user()->id,
+                'logger_name' => $request->user()->name,
+            ]);
+
+            $delivery->items()->createMany($items);
+        });
 
         return redirect()
             ->route('package-deliveries.index')
@@ -71,7 +81,17 @@ class PackageDeliveryController extends Controller
 
     public function update(Request $request, PackageDelivery $packageDelivery): RedirectResponse
     {
-        $packageDelivery->update($this->validateDelivery($request));
+        $data = $this->validateDelivery($request);
+        $items = $data['items'];
+        unset($data['items']);
+
+        DB::transaction(function () use ($packageDelivery, $data, $items) {
+            $packageDelivery->update($data);
+
+            // Replace the parcel list wholesale — simplest correct sync.
+            $packageDelivery->items()->delete();
+            $packageDelivery->items()->createMany($items);
+        });
 
         return back()->with('success', 'Package updated.');
     }
@@ -83,7 +103,7 @@ class PackageDeliveryController extends Controller
     public function markReceived(Request $request, PackageDelivery $packageDelivery): RedirectResponse
     {
         if ($packageDelivery->status === 'received') {
-            return back()->with('error', 'This package was already received.');
+            return back()->with('error', 'This drop-off was already received.');
         }
 
         $validated = $request->validate([
@@ -106,7 +126,7 @@ class PackageDeliveryController extends Controller
             'received_signature_path' => $signaturePath,
         ]);
 
-        return back()->with('success', "{$packageDelivery->recipient_name}'s package marked as received.");
+        return back()->with('success', "{$packageDelivery->recipient_name}'s package(s) marked as received.");
     }
 
     public function destroy(PackageDelivery $packageDelivery): RedirectResponse
@@ -142,11 +162,12 @@ class PackageDeliveryController extends Controller
         return $request->validate([
             'recipient_name' => ['required', 'string', 'max:255'],
             'recipient_department' => ['nullable', 'string', 'max:255'],
-            'courier' => ['nullable', 'string', 'max:255'],
             'rider_name' => ['nullable', 'string', 'max:255'],
-            'tracking_number' => ['nullable', 'string', 'max:255'],
-            'sender' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:255'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.tracking_number' => ['nullable', 'string', 'max:255'],
+            'items.*.courier' => ['nullable', 'string', 'max:255'],
+            'items.*.sender' => ['nullable', 'string', 'max:255'],
         ]);
     }
 

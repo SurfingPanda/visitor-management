@@ -497,16 +497,23 @@ function ItemsEditor({ form }) {
 
                             <div className="sm:col-span-3">
                                 <label className={subLabel}>UOM</label>
-                                <input
-                                    type="text"
-                                    list="uom-options"
+                                <select
                                     value={it.uom ?? ''}
                                     onChange={(e) =>
                                         updateItem(i, 'uom', e.target.value)
                                     }
-                                    placeholder="pcs"
                                     className={fieldClass}
-                                />
+                                >
+                                    <option value="">Select unit</option>
+                                    {it.uom && !uomOptions.includes(it.uom) && (
+                                        <option value={it.uom}>{it.uom}</option>
+                                    )}
+                                    {uomOptions.map((u) => (
+                                        <option key={u} value={u}>
+                                            {u}
+                                        </option>
+                                    ))}
+                                </select>
                                 <InputError
                                     message={form.errors[`items.${i}.uom`]}
                                     className="mt-1"
@@ -531,12 +538,6 @@ function ItemsEditor({ form }) {
                     </div>
                 ))}
             </div>
-
-            <datalist id="uom-options">
-                {uomOptions.map((u) => (
-                    <option key={u} value={u} />
-                ))}
-            </datalist>
 
             {typeof form.errors.items === 'string' && (
                 <InputError message={form.errors.items} className="mt-1" />
@@ -651,6 +652,7 @@ export default function SupplierDeliveriesIndex({
     const [search, setSearch] = useState(filters.search ?? '');
     const [from, setFrom] = useState(filters.from ?? '');
     const [to, setTo] = useState(filters.to ?? '');
+    const [status, setStatus] = useState(filters.status ?? '');
     const [toast, setToast] = useState(null);
     const [creating, setCreating] = useState(false);
     const [editing, setEditing] = useState(null);
@@ -665,6 +667,7 @@ export default function SupplierDeliveriesIndex({
             search,
             from,
             to,
+            status,
             ...overrides,
         };
         router.get(
@@ -673,6 +676,7 @@ export default function SupplierDeliveriesIndex({
                 search: params.search || undefined,
                 from: params.from || undefined,
                 to: params.to || undefined,
+                status: params.status || undefined,
             },
             { preserveState: true, preserveScroll: true, replace: true },
         );
@@ -704,6 +708,11 @@ export default function SupplierDeliveriesIndex({
         setFrom(nextFrom);
         setTo(nextTo);
         applyFilters({ from: nextFrom, to: nextTo });
+    };
+
+    const changeStatus = (nextStatus) => {
+        setStatus(nextStatus);
+        applyFilters({ status: nextStatus });
     };
 
     const submitCreate = (e) => {
@@ -860,6 +869,21 @@ export default function SupplierDeliveriesIndex({
                             )}
                         </div>
 
+                        {/* Status filter */}
+                        <select
+                            value={status}
+                            onChange={(e) => changeStatus(e.target.value)}
+                            title="Filter by status"
+                            className={
+                                'rounded-lg border-gray-300 py-2.5 pl-3 pr-8 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ' +
+                                (status ? 'text-gray-900' : 'text-gray-500')
+                            }
+                        >
+                            <option value="">All statuses</option>
+                            <option value="checked_in">On site</option>
+                            <option value="checked_out">Checked out</option>
+                        </select>
+
                         {/* Export / print — available once a date range is set */}
                         {(from || to) && (
                             <>
@@ -868,6 +892,7 @@ export default function SupplierDeliveriesIndex({
                                         search: search || undefined,
                                         from: from || undefined,
                                         to: to || undefined,
+                                        status: status || undefined,
                                     })}
                                     title="Export the selected range to Excel (CSV)"
                                     className="flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
@@ -884,6 +909,7 @@ export default function SupplierDeliveriesIndex({
                                         search: search || undefined,
                                         from: from || undefined,
                                         to: to || undefined,
+                                        status: status || undefined,
                                     })}
                                     target="_blank"
                                     rel="noopener"

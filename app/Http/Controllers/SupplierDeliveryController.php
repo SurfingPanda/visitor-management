@@ -7,6 +7,7 @@ use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -91,24 +92,28 @@ class SupplierDeliveryController extends Controller
     }
 
     /**
-     * @return array{search: string, from: string, to: string}
+     * @return array{search: string, from: string, to: string, status: string}
      */
     private function filters(Request $request): array
     {
+        $status = $request->string('status')->toString();
+
         return [
             'search' => $request->string('search')->toString(),
             'from' => $request->date('from')?->toDateString() ?? '',
             'to' => $request->date('to')?->toDateString() ?? '',
+            'status' => in_array($status, ['checked_in', 'checked_out'], true) ? $status : '',
         ];
     }
 
     /**
-     * @param  array{search: string, from: string, to: string}  $filters
+     * @param  array{search: string, from: string, to: string, status: string}  $filters
      */
     private function filteredQuery(array $filters): Builder
     {
         return SupplierDelivery::query()
             ->with('items')
+            ->when($filters['status'], fn ($query, $status) => $query->where('status', $status))
             ->when($filters['search'], function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('supplier_name', 'like', "%{$search}%")
@@ -155,16 +160,18 @@ class SupplierDeliveryController extends Controller
             : null;
         unset($data['dr_image']);
 
-        $delivery = SupplierDelivery::create([
-            ...$data,
-            // Logging a delivery checks the supplier in on arrival.
-            'status' => 'checked_in',
-            'checked_in_at' => now(),
-            'recorded_by' => $request->user()->id,
-            'recorder_name' => $request->user()->name,
-        ]);
+        DB::transaction(function () use ($data, $items, $request) {
+            $delivery = SupplierDelivery::create([
+                ...$data,
+                // Logging a delivery checks the supplier in on arrival.
+                'status' => 'checked_in',
+                'checked_in_at' => now(),
+                'recorded_by' => $request->user()->id,
+                'recorder_name' => $request->user()->name,
+            ]);
 
-        $delivery->items()->createMany($items);
+            $delivery->items()->createMany($items);
+        });
 
         return redirect()
             ->route('supplier-deliveries.index')
@@ -185,11 +192,13 @@ class SupplierDeliveryController extends Controller
         }
         unset($data['dr_image']);
 
-        $supplierDelivery->update($data);
+        DB::transaction(function () use ($supplierDelivery, $data, $items) {
+            $supplierDelivery->update($data);
 
-        // Replace the item list wholesale — simplest correct sync for a small set.
-        $supplierDelivery->items()->delete();
-        $supplierDelivery->items()->createMany($items);
+            // Replace the item list wholesale — simplest correct sync for a small set.
+            $supplierDelivery->items()->delete();
+            $supplierDelivery->items()->createMany($items);
+        });
 
         return back()->with('success', 'Supplier delivery updated.');
     }

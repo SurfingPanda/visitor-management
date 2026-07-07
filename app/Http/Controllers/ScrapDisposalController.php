@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ScrapDisposal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -69,13 +70,15 @@ class ScrapDisposalController extends Controller
         $items = $data['items'];
         unset($data['items']);
 
-        $disposal = ScrapDisposal::create([
-            ...$data,
-            'recorded_by' => $request->user()->id,
-            'recorder_name' => $request->user()->name,
-        ]);
+        DB::transaction(function () use ($data, $items, $request) {
+            $disposal = ScrapDisposal::create([
+                ...$data,
+                'recorded_by' => $request->user()->id,
+                'recorder_name' => $request->user()->name,
+            ]);
 
-        $disposal->items()->createMany($items);
+            $disposal->items()->createMany($items);
+        });
 
         return redirect()
             ->route('scrap-disposals.index')
@@ -88,11 +91,13 @@ class ScrapDisposalController extends Controller
         $items = $data['items'];
         unset($data['items']);
 
-        $scrapDisposal->update($data);
+        DB::transaction(function () use ($scrapDisposal, $data, $items) {
+            $scrapDisposal->update($data);
 
-        // Replace the item list wholesale — simplest correct sync for a small set.
-        $scrapDisposal->items()->delete();
-        $scrapDisposal->items()->createMany($items);
+            // Replace the item list wholesale — simplest correct sync for a small set.
+            $scrapDisposal->items()->delete();
+            $scrapDisposal->items()->createMany($items);
+        });
 
         return back()->with('success', 'Scrap disposal updated.');
     }

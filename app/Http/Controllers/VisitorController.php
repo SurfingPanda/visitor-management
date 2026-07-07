@@ -7,6 +7,7 @@ use App\Models\Visitor;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -177,34 +178,38 @@ class VisitorController extends Controller
             'check_in_now' => ['boolean'],
         ]);
 
-        $visitor = Visitor::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'] ?? null,
-            'phone' => $validated['phone'] ?? null,
-            'company' => $validated['company'] ?? null,
-            'host' => $validated['host'],
-            'purpose' => $validated['purpose'] ?? null,
-            'companions' => $validated['companions'] ?? 0,
-            'device_pin' => $validated['device_pin'] ?? null,
-            'qr_token' => (string) Str::ulid(),
-            'status' => 'expected',
-        ]);
-
-        $visitor->update([
-            'badge_number' => 'VIS-'.date('Y').'-'.str_pad((string) $visitor->id, 9, '0', STR_PAD_LEFT),
-        ]);
-
-        // Arrival photos belong to the visit, so they are only kept when the
+        // Arrival photos belong to the visit, so they are only captured when the
         // visitor is actually checked in now (an "expected" visitor has no visit
-        // yet — they'll be photographed when they arrive at the gate).
+        // yet — they'll be photographed when they arrive at the gate). Stored to
+        // disk up front so the atomic write below just references the paths.
         $checkInNow = $request->boolean('check_in_now');
-        if ($checkInNow) {
-            $visitor->recordCheckIn(
-                null,
-                $this->storePhoto($validated['photo'] ?? null),
-                $this->storePhoto($validated['id_photo'] ?? null),
-            );
-        }
+        $photoPath = $checkInNow ? $this->storePhoto($validated['photo'] ?? null) : null;
+        $idPhotoPath = $checkInNow ? $this->storePhoto($validated['id_photo'] ?? null) : null;
+
+        $visitor = DB::transaction(function () use ($validated, $checkInNow, $photoPath, $idPhotoPath) {
+            $visitor = Visitor::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'company' => $validated['company'] ?? null,
+                'host' => $validated['host'],
+                'purpose' => $validated['purpose'] ?? null,
+                'companions' => $validated['companions'] ?? 0,
+                'device_pin' => $validated['device_pin'] ?? null,
+                'qr_token' => (string) Str::ulid(),
+                'status' => 'expected',
+            ]);
+
+            $visitor->update([
+                'badge_number' => 'VIS-'.date('Y').'-'.str_pad((string) $visitor->id, 9, '0', STR_PAD_LEFT),
+            ]);
+
+            if ($checkInNow) {
+                $visitor->recordCheckIn(null, $photoPath, $idPhotoPath);
+            }
+
+            return $visitor;
+        });
 
         // Registration complete -> go print the badge (QR is on it).
         return redirect()

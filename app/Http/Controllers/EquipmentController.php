@@ -13,7 +13,7 @@ use Inertia\Response;
 class EquipmentController extends Controller
 {
     /** Lifecycle states offered in the form / filter. */
-    private const STATUSES = ['in_stock', 'disposed'];
+    private const STATUSES = ['in_stock', 'under_repair', 'transferred', 'disposed'];
 
     public function index(Request $request): Response
     {
