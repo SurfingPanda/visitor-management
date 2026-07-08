@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,5 +22,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // In production, force https URL generation and mark the session cookie
+        // Secure so it is never sent over plain http. Local dev runs over http,
+        // so this is scoped to production to avoid breaking localhost logins.
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+            config(['session.secure' => true]);
+        }
     }
 }
