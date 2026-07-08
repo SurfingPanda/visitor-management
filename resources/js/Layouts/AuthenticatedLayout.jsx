@@ -154,17 +154,17 @@ const navGroups = [
         title: 'Front Desk',
         items: [
             { label: 'Visitors', icon: icons.visitors, route: 'visitors.index', module: 'front_desk' },
-            { label: 'Requests', icon: icons.requests, route: 'visitor-requests.index', module: 'front_desk' },
+            { label: 'Requests', icon: icons.requests, route: 'visitor-requests.index', module: 'front_desk', badge: 'requests' },
             { label: 'Scan / Check-out', icon: icons.checkin, route: 'visitors.scan', module: 'front_desk' },
             { label: 'Badges', icon: icons.badges, route: 'badges.index', module: 'front_desk' },
-            { label: 'Packages', icon: icons.packages, route: 'package-deliveries.index', module: 'front_desk' },
+            { label: 'Packages', icon: icons.packages, route: 'package-deliveries.index', module: 'front_desk', badge: 'packages' },
         ],
     },
     {
         title: 'Fleet & Delivery',
         items: [
-            { label: 'Delivery Log', icon: icons.delivery, route: 'delivery-logs.index', module: 'delivery_logs' },
-            { label: 'Supplier Delivery', icon: icons.supplierDelivery, route: 'supplier-deliveries.index', module: 'supplier_deliveries' },
+            { label: 'Delivery Log', icon: icons.delivery, route: 'delivery-logs.index', module: 'delivery_logs', badge: 'delivery_logs' },
+            { label: 'Supplier Delivery', icon: icons.supplierDelivery, route: 'supplier-deliveries.index', module: 'supplier_deliveries', badge: 'supplier_deliveries' },
             { label: 'Vehicles', icon: icons.vehicles, route: 'vehicles.index', module: 'vehicles' },
             { label: 'Drivers', icon: icons.drivers, route: 'drivers.index', module: 'drivers' },
             { label: 'Helpers', icon: icons.helpers, route: 'helpers.index', module: 'helpers' },
@@ -180,7 +180,7 @@ const navGroups = [
     {
         title: 'Safety',
         items: [
-            { label: 'Incident & Accident Report', icon: icons.incidents, route: 'incident-reports.index', module: 'incidents' },
+            { label: 'Incident & Accident Report', icon: icons.incidents, route: 'incident-reports.index', module: 'incidents', badge: 'incidents' },
         ],
     },
     {
@@ -194,7 +194,7 @@ const navGroups = [
 
 /* ---------- sidebar ---------- */
 
-function Sidebar({ onNavigate, isAdmin, modules = [], collapsed = false }) {
+function Sidebar({ onNavigate, isAdmin, modules = [], badges = {}, collapsed = false }) {
     const canSee = (item) => {
         if (item.adminOnly && !isAdmin) return false;
         if (item.module && !isAdmin && !modules.includes(item.module)) return false;
@@ -203,9 +203,10 @@ function Sidebar({ onNavigate, isAdmin, modules = [], collapsed = false }) {
 
     const renderItem = (item) => {
         const isActive = item.route && route().current(item.route);
+        const count = item.badge ? badges[item.badge] ?? 0 : 0;
 
         const base =
-            'group flex items-center rounded-lg py-2 text-sm font-medium transition ' +
+            'group relative flex items-center rounded-lg py-2 text-sm font-medium transition ' +
             (collapsed ? 'justify-center px-0' : 'gap-3 px-3');
 
         if (item.route) {
@@ -224,7 +225,23 @@ function Sidebar({ onNavigate, isAdmin, modules = [], collapsed = false }) {
                     }
                 >
                     {item.icon}
-                    {!collapsed && item.label}
+                    {!collapsed && <span className="flex-1">{item.label}</span>}
+                    {!collapsed && count > 0 && (
+                        <span
+                            className={
+                                'ml-auto min-w-[1.25rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-bold leading-none ' +
+                                (isActive
+                                    ? 'bg-white/25 text-white'
+                                    : 'bg-red-500 text-white')
+                            }
+                        >
+                            {count > 99 ? '99+' : count}
+                        </span>
+                    )}
+                    {/* Collapsed: a dot is enough to signal a backlog. */}
+                    {collapsed && count > 0 && (
+                        <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-slate-900" />
+                    )}
                 </Link>
             );
         }
@@ -305,6 +322,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const auth = usePage().props.auth;
     const user = auth.user;
     const modules = auth.modules ?? [];
+    const navBadges = usePage().props.navBadges ?? {};
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
     const [collapsed, setCollapsed] = useState(
@@ -341,6 +359,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 <Sidebar
                     isAdmin={user.is_admin}
                     modules={modules}
+                    badges={navBadges}
                     collapsed={collapsed}
                 />
             </aside>
@@ -356,6 +375,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         <Sidebar
                             isAdmin={user.is_admin}
                             modules={modules}
+                            badges={navBadges}
                             onNavigate={() => setSidebarOpen(false)}
                         />
                     </aside>
