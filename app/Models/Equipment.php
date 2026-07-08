@@ -52,18 +52,21 @@ class Equipment extends Model
 
     protected function imageUrl(): Attribute
     {
-        // Root-relative (not absolute) so it resolves against whatever host the
-        // app is served from — localhost:8000, a tunnel, LAN IP, or Hostinger —
-        // rather than the hardcoded APP_URL host.
+        // Gated, staff-only URL (root-relative). The image lives on the private
+        // disk and is streamed through an auth-protected route, never /storage.
         return Attribute::get(
-            fn () => $this->image_path ? '/storage/'.$this->image_path : null,
+            fn () => $this->image_path
+                ? route('equipment.image', ['equipment' => $this->id, 'which' => 'photo'], false)
+                : null,
         );
     }
 
     protected function assetFormImageUrl(): Attribute
     {
         return Attribute::get(
-            fn () => $this->asset_form_image_path ? '/storage/'.$this->asset_form_image_path : null,
+            fn () => $this->asset_form_image_path
+                ? route('equipment.image', ['equipment' => $this->id, 'which' => 'asset-form'], false)
+                : null,
         );
     }
 

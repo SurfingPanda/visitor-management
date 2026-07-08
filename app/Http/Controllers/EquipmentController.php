@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EquipmentController extends Controller
 {
@@ -69,12 +70,12 @@ class EquipmentController extends Controller
         $data = $this->validateEquipment($request);
 
         $data['image_path'] = $request->hasFile('image')
-            ? $request->file('image')->store('equipment-images', 'public')
+            ? $request->file('image')->store('equipment-images', 'local')
             : null;
         unset($data['image']);
 
         $data['asset_form_image_path'] = $request->hasFile('asset_form_image')
-            ? $request->file('asset_form_image')->store('equipment-asset-forms', 'public')
+            ? $request->file('asset_form_image')->store('equipment-asset-forms', 'local')
             : null;
         unset($data['asset_form_image']);
 
@@ -95,17 +96,17 @@ class EquipmentController extends Controller
 
         if ($request->hasFile('image')) {
             if ($equipment->image_path) {
-                Storage::disk('public')->delete($equipment->image_path);
+                Storage::disk('local')->delete($equipment->image_path);
             }
-            $data['image_path'] = $request->file('image')->store('equipment-images', 'public');
+            $data['image_path'] = $request->file('image')->store('equipment-images', 'local');
         }
         unset($data['image']);
 
         if ($request->hasFile('asset_form_image')) {
             if ($equipment->asset_form_image_path) {
-                Storage::disk('public')->delete($equipment->asset_form_image_path);
+                Storage::disk('local')->delete($equipment->asset_form_image_path);
             }
-            $data['asset_form_image_path'] = $request->file('asset_form_image')->store('equipment-asset-forms', 'public');
+            $data['asset_form_image_path'] = $request->file('asset_form_image')->store('equipment-asset-forms', 'local');
         }
         unset($data['asset_form_image']);
 
@@ -118,13 +119,30 @@ class EquipmentController extends Controller
     {
         foreach ([$equipment->image_path, $equipment->asset_form_image_path] as $path) {
             if ($path) {
-                Storage::disk('public')->delete($path);
+                Storage::disk('local')->delete($path);
             }
         }
 
         $equipment->delete();
 
         return back()->with('success', 'Equipment removed.');
+    }
+
+    /**
+     * Stream an equipment image (the item photo or the asset form) from the
+     * private disk to authenticated staff — never world-readable via /storage.
+     */
+    public function image(Equipment $equipment, string $which): StreamedResponse
+    {
+        $path = $which === 'asset-form'
+            ? $equipment->asset_form_image_path
+            : $equipment->image_path;
+
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, [
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     /**

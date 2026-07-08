@@ -123,6 +123,9 @@ Route::middleware(['auth', 'verified', 'module.access'])->group(function () {
     Route::post('/equipment', [EquipmentController::class, 'store'])->name('equipment.store');
     Route::patch('/equipment/{equipment}', [EquipmentController::class, 'update'])->name('equipment.update');
     Route::delete('/equipment/{equipment}', [EquipmentController::class, 'destroy'])->name('equipment.destroy');
+    Route::get('/equipment/{equipment}/image/{which}', [EquipmentController::class, 'image'])
+        ->whereIn('which', ['photo', 'asset-form'])
+        ->name('equipment.image');
 
     Route::get('/scrap-disposals', [ScrapDisposalController::class, 'index'])->name('scrap-disposals.index');
     Route::post('/scrap-disposals', [ScrapDisposalController::class, 'store'])->name('scrap-disposals.store');
@@ -136,6 +139,7 @@ Route::middleware(['auth', 'verified', 'module.access'])->group(function () {
     Route::patch('/supplier-deliveries/{supplierDelivery}', [SupplierDeliveryController::class, 'update'])->name('supplier-deliveries.update');
     Route::patch('/supplier-deliveries/{supplierDelivery}/check-out', [SupplierDeliveryController::class, 'checkOut'])->name('supplier-deliveries.check-out');
     Route::delete('/supplier-deliveries/{supplierDelivery}', [SupplierDeliveryController::class, 'destroy'])->name('supplier-deliveries.destroy');
+    Route::get('/supplier-deliveries/{supplierDelivery}/dr-image', [SupplierDeliveryController::class, 'drImage'])->name('supplier-deliveries.dr-image');
 });
 
 // Admin-only team / user management.

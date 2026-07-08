@@ -40,16 +40,19 @@ class UserController extends Controller
         $isAdmin = $request->boolean('is_admin');
         $access = $isAdmin ? [] : array_values($validated['module_access'] ?? []);
 
-        User::create([
+        $user = new User;
+        $user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'is_admin' => $isAdmin,
-            // Admins get everything implicitly, so store no explicit grants.
-            'module_access' => $access,
-            'module_write' => $isAdmin ? [] : $this->writeGrants($validated['module_write'] ?? [], $access),
-            'email_verified_at' => now(),
         ]);
+        // Privilege fields are guarded (not mass-assignable) — set explicitly.
+        // Admins get everything implicitly, so store no explicit grants.
+        $user->is_admin = $isAdmin;
+        $user->module_access = $access;
+        $user->module_write = $isAdmin ? [] : $this->writeGrants($validated['module_write'] ?? [], $access);
+        $user->email_verified_at = now();
+        $user->save();
 
         return back()->with('success', "{$validated['name']} added to the team.");
     }
@@ -77,10 +80,11 @@ class UserController extends Controller
         $user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'is_admin' => $isAdmin,
-            'module_access' => $access,
-            'module_write' => $isAdmin ? [] : $this->writeGrants($validated['module_write'] ?? [], $access),
         ]);
+        // Privilege fields are guarded (not mass-assignable) — set explicitly.
+        $user->is_admin = $isAdmin;
+        $user->module_access = $access;
+        $user->module_write = $isAdmin ? [] : $this->writeGrants($validated['module_write'] ?? [], $access);
 
         if (! empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);

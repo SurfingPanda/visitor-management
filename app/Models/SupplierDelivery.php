@@ -55,9 +55,12 @@ class SupplierDelivery extends Model
 
     protected function drImageUrl(): Attribute
     {
-        // Root-relative so it resolves against whatever host serves the app.
+        // Gated, staff-only URL (root-relative). The image lives on the private
+        // disk and is streamed through an auth-protected route, never /storage.
         return Attribute::get(
-            fn () => $this->dr_image_path ? '/storage/'.$this->dr_image_path : null,
+            fn () => $this->dr_image_path
+                ? route('supplier-deliveries.dr-image', ['supplierDelivery' => $this->id], false)
+                : null,
         );
     }
 

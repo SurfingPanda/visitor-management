@@ -156,7 +156,7 @@ class SupplierDeliveryController extends Controller
         unset($data['items']);
 
         $data['dr_image_path'] = $request->hasFile('dr_image')
-            ? $request->file('dr_image')->store('supplier-deliveries', 'public')
+            ? $request->file('dr_image')->store('supplier-deliveries', 'local')
             : null;
         unset($data['dr_image']);
 
@@ -186,9 +186,9 @@ class SupplierDeliveryController extends Controller
 
         if ($request->hasFile('dr_image')) {
             if ($supplierDelivery->dr_image_path) {
-                Storage::disk('public')->delete($supplierDelivery->dr_image_path);
+                Storage::disk('local')->delete($supplierDelivery->dr_image_path);
             }
-            $data['dr_image_path'] = $request->file('dr_image')->store('supplier-deliveries', 'public');
+            $data['dr_image_path'] = $request->file('dr_image')->store('supplier-deliveries', 'local');
         }
         unset($data['dr_image']);
 
@@ -220,12 +220,27 @@ class SupplierDeliveryController extends Controller
     public function destroy(SupplierDelivery $supplierDelivery): RedirectResponse
     {
         if ($supplierDelivery->dr_image_path) {
-            Storage::disk('public')->delete($supplierDelivery->dr_image_path);
+            Storage::disk('local')->delete($supplierDelivery->dr_image_path);
         }
 
         $supplierDelivery->delete();
 
         return back()->with('success', 'Supplier delivery removed.');
+    }
+
+    /**
+     * Stream the DR image from the private disk to authenticated staff. The file
+     * lives on the local (non-public) disk so it is never world-readable.
+     */
+    public function drImage(SupplierDelivery $supplierDelivery): StreamedResponse
+    {
+        $path = $supplierDelivery->dr_image_path;
+
+        abort_unless($path && Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, null, [
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
     }
 
     /**

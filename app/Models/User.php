@@ -19,13 +19,18 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+    /**
+     * Mass-assignable attributes. Privilege fields (is_admin, module_access,
+     * module_write) are deliberately NOT here — they are set explicitly in
+     * UserController behind admin middleware, so a stray create($request->all())
+     * can never let a user grant themselves admin or extra module access.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'is_admin',
-        'module_access',
-        'module_write',
     ];
 
     /**
