@@ -264,6 +264,15 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                                             <div className="font-medium text-gray-900">
                                                 {r.name}
                                             </div>
+                                            {r.email && (
+                                                <a
+                                                    href={`mailto:${r.email}`}
+                                                    className="text-xs text-indigo-500 hover:text-indigo-600 hover:underline"
+                                                    title="Notifications are sent here"
+                                                >
+                                                    {r.email}
+                                                </a>
+                                            )}
                                             <div className="text-xs text-gray-400">
                                                 {r.company || '—'}
                                             </div>
@@ -446,6 +455,16 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                             {approving.reference} · Visiting{' '}
                             {approving.contact_person}. Sign off to issue the pass.
                         </p>
+                        {approving.email && (
+                            <p className="mt-1 text-xs text-gray-400">
+                                An approval email with their pass link will be sent
+                                to{' '}
+                                <span className="font-medium text-gray-600">
+                                    {approving.email}
+                                </span>
+                                .
+                            </p>
+                        )}
 
                         <div className="mt-5 space-y-4">
                             <div>
@@ -536,6 +555,15 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                             {declining.reference}. The visitor can see the status,
                             so a brief reason is helpful.
                         </p>
+                        {declining.email && (
+                            <p className="mt-1 text-xs text-gray-400">
+                                They'll be emailed at{' '}
+                                <span className="font-medium text-gray-600">
+                                    {declining.email}
+                                </span>
+                                {' '}with the reason below.
+                            </p>
+                        )}
 
                         <div className="mt-5">
                             <label className="mb-1 block text-sm font-medium text-gray-700">
