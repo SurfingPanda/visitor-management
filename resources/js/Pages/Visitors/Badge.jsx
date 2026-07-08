@@ -1,14 +1,5 @@
+import VisitorPassCard from '@/Components/VisitorPassCard';
 import { Head, Link } from '@inertiajs/react';
-import { QRCodeSVG } from 'qrcode.react';
-
-function formatDate(value) {
-    const d = value ? new Date(value) : new Date();
-    return d.toLocaleDateString([], {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-}
 
 export default function Badge({ visitor }) {
     return (
@@ -20,91 +11,25 @@ export default function Badge({ visitor }) {
                 @media print {
                     .no-print { display: none !important; }
                     body { background: #fff !important; }
-                    .badge-sheet { box-shadow: none !important; }
                     @page { margin: 12mm; }
                 }
             `}</style>
 
-            <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 px-4 py-10">
-                {/* Badge */}
-                <div className="badge-sheet w-full max-w-[340px] overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-200">
-                    {/* Header */}
-                    <div className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-800 px-5 py-3 text-white">
-                        <div className="flex items-center gap-2">
-                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white p-1">
-                                <img
-                                    src="/images/secora-logo.png"
-                                    alt="Secora"
-                                    className="h-full w-full object-contain"
-                                />
-                            </span>
-                            <span className="text-sm font-bold tracking-wide">
-                                Secora
-                            </span>
-                        </div>
-                        <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs font-semibold uppercase tracking-widest">
-                            Visitor
-                        </span>
-                    </div>
-
-                    {/* Body */}
-                    <div className="px-6 py-5 text-center">
-                        {visitor.photo_url && (
-                            <img
-                                src={visitor.photo_url}
-                                alt={visitor.name}
-                                className="mx-auto mb-3 h-24 w-24 rounded-full object-cover ring-2 ring-indigo-100"
-                            />
-                        )}
-                        <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                            {visitor.badge_number}
-                        </p>
-                        <h1 className="mt-1 text-2xl font-bold leading-tight text-gray-900">
-                            {visitor.name}
-                        </h1>
-                        {visitor.company && (
-                            <p className="text-sm text-gray-500">
-                                {visitor.company}
-                            </p>
-                        )}
-
-                        <div className="mt-4 flex justify-center">
-                            <div className="rounded-xl border border-gray-200 bg-white p-3">
-                                <QRCodeSVG
-                                    value={visitor.qr_token}
-                                    size={168}
-                                    level="M"
-                                    marginSize={0}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="mt-4 space-y-1 text-sm">
-                            <p className="text-gray-700">
-                                <span className="text-gray-400">Visiting:</span>{' '}
-                                <span className="font-medium">
-                                    {visitor.host}
-                                </span>
-                            </p>
-                            {visitor.purpose && (
-                                <p className="text-gray-700">
-                                    <span className="text-gray-400">
-                                        Purpose:
-                                    </span>{' '}
-                                    {visitor.purpose}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="border-t border-dashed border-gray-200 bg-gray-50 px-6 py-3 text-center">
-                        <p className="text-xs text-gray-500">
-                            Issued {formatDate(visitor.checked_in_at)} · Please
-                            wear visibly at all times
-                        </p>
-                    </div>
-                </div>
+            <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 px-4 py-10 print:bg-white">
+                {/* Same pass card used throughout the appointment flow. Walk-in
+                    badges carry a photo + purpose and no signatures. */}
+                <VisitorPassCard
+                    name={visitor.name}
+                    company={visitor.company}
+                    contactPerson={visitor.host}
+                    purpose={visitor.purpose}
+                    photoUrl={visitor.photo_url}
+                    qrToken={visitor.qr_token}
+                    badgeNumber={visitor.badge_number}
+                    visitDate={visitor.visit_date}
+                    status="approved"
+                    showSignatures={false}
+                />
 
                 {/* Actions (not printed) */}
                 <div className="no-print mt-6 flex items-center gap-3">

@@ -14,6 +14,7 @@ class VisitorRequest extends Model
         'name',
         'contact_person',
         'email',
+        'visit_date',
         'company',
         'signature_path',
         'status',
@@ -26,6 +27,13 @@ class VisitorRequest extends Model
     ];
 
     protected $appends = ['signature_url', 'approver_signature_url'];
+
+    protected function casts(): array
+    {
+        return [
+            'visit_date' => 'date',
+        ];
+    }
 
     /**
      * Assign a random, unguessable reference on creation so the public status

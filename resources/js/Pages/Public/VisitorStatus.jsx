@@ -178,6 +178,7 @@ export default function VisitorStatusPage({ query, result }) {
                                     }
                                     qrToken={result.qr_token}
                                     badgeNumber={result.badge_number}
+                                    visitDate={result.visit_date}
                                     status="approved"
                                 />
                             </div>

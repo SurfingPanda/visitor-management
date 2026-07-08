@@ -262,7 +262,7 @@ class VisitorController extends Controller
         return Inertia::render('Visitors/Badge', [
             'visitor' => array_merge(
                 $visitor->only([
-                    'id', 'name', 'company', 'host', 'purpose',
+                    'id', 'name', 'company', 'host', 'purpose', 'visit_date',
                     'badge_number', 'qr_token', 'status', 'checked_in_at',
                 ]),
                 ['photo_url' => $visitor->photo_url],
@@ -324,6 +324,15 @@ class VisitorController extends Controller
         // Check in.
         if ($visitor->status === 'checked_in') {
             return back()->with('error', "{$visitor->name} is already checked in.");
+        }
+
+        // A dated badge expires the day after its appointment — reject the scan.
+        if ($visitor->isExpired()) {
+            return back()->with(
+                'error',
+                "Badge expired. {$visitor->name}'s pass was only valid through ".
+                    $visitor->visit_date->format('M j, Y').'. Please re-register at the front desk.'
+            );
         }
 
         $visitor->recordCheckIn();

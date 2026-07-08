@@ -11,9 +11,14 @@ export default function VisitorRequestPage() {
         name: '',
         email: '',
         contact_person: '',
+        visit_date: '',
         company: '',
         signature: '',
     });
+
+    // Local "today" (YYYY-MM-DD) so the date picker can't select the past.
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     // Bump to remount the signature pad (clears the canvas) after a reset.
     const [padKey, setPadKey] = useState(0);
 
@@ -179,6 +184,30 @@ export default function VisitorRequestPage() {
 
                                 <div>
                                     <label className="mb-1 block text-sm font-medium text-gray-700">
+                                        Date of visit{' '}
+                                        <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="date"
+                                        min={todayStr}
+                                        value={form.data.visit_date}
+                                        onChange={(e) =>
+                                            form.setData('visit_date', e.target.value)
+                                        }
+                                        className={field}
+                                    />
+                                    <p className="mt-1 text-xs text-gray-400">
+                                        Your badge is valid for this day only.
+                                    </p>
+                                    {form.errors.visit_date && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            {form.errors.visit_date}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="mb-1 block text-sm font-medium text-gray-700">
                                         Company
                                     </label>
                                     <input
@@ -249,6 +278,7 @@ export default function VisitorRequestPage() {
                                 contactPerson={form.data.contact_person}
                                 company={form.data.company}
                                 visitorSignature={form.data.signature}
+                                visitDate={form.data.visit_date}
                                 status="pending"
                             />
                         </div>

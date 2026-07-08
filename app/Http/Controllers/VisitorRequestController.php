@@ -51,6 +51,7 @@ class VisitorRequestController extends Controller
                     'company' => $found->company,
                     'contact_person' => $found->contact_person,
                     'status' => $found->status,
+                    'visit_date' => $found->visit_date,
                     'created_at' => $found->created_at,
                     'decline_reason' => $found->decline_reason,
                     'signature_url' => $found->signature_path
@@ -81,6 +82,8 @@ class VisitorRequestController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'contact_person' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
+            // Appointment date — can't be in the past.
+            'visit_date' => ['required', 'date', 'after_or_equal:today'],
             'company' => ['nullable', 'string', 'max:255'],
             // Base64 data-URL image, capped (~500 KB) so a huge blob can't be
             // used to abuse storage/memory.
@@ -118,6 +121,7 @@ class VisitorRequestController extends Controller
             'name' => $validated['name'],
             'contact_person' => $validated['contact_person'],
             'email' => $validated['email'],
+            'visit_date' => $validated['visit_date'],
             'company' => $company,
             'signature_path' => $signaturePath,
             'status' => 'pending',
@@ -194,6 +198,7 @@ class VisitorRequestController extends Controller
                 'name' => $visitorRequest->name,
                 'company' => $visitorRequest->company,
                 'host' => $visitorRequest->contact_person,
+                'visit_date' => $visitorRequest->visit_date,
                 'qr_token' => (string) Str::ulid(),
                 'status' => 'expected',
             ]);

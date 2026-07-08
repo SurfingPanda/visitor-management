@@ -29,6 +29,16 @@ function formatDate(value) {
     });
 }
 
+// Date only (no time) — used for the appointment/visit date.
+function formatDay(value) {
+    if (!value) return '—';
+    return new Date(value).toLocaleDateString([], {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
+}
+
 const tabs = [
     { key: 'pending', label: 'Pending' },
     { key: 'approved', label: 'Approved' },
@@ -39,7 +49,6 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
     const flash = usePage().props.flash;
     const authUser = usePage().props.auth.user;
     const [toast, setToast] = useState(null);
-    const [preview, setPreview] = useState(null); // signature preview modal
     const [approving, setApproving] = useState(null); // request being approved
     const [declining, setDeclining] = useState(null); // request being declined
     const [viewingPass, setViewingPass] = useState(null); // approved pass viewer
@@ -246,7 +255,7 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                                     <th className="px-6 py-3">ID #</th>
                                     <th className="px-6 py-3">Visitor</th>
                                     <th className="px-6 py-3">Contact person</th>
-                                    <th className="px-6 py-3">Signature</th>
+                                    <th className="px-6 py-3">Visit date</th>
                                     <th className="px-6 py-3">Submitted</th>
                                     <th className="px-6 py-3">Status</th>
                                     <th className="px-6 py-3 text-right">Action</th>
@@ -280,20 +289,11 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                                         <td className="px-6 py-3 text-gray-600">
                                             {r.contact_person}
                                         </td>
-                                        <td className="px-6 py-3">
-                                            {r.signature_url ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPreview(r)}
-                                                    className="rounded-md border border-gray-200 bg-white p-1 transition hover:border-indigo-300"
-                                                    title="View signature"
-                                                >
-                                                    <img
-                                                        src={r.signature_url}
-                                                        alt="Signature"
-                                                        className="h-8 w-20 object-contain"
-                                                    />
-                                                </button>
+                                        <td className="px-6 py-3 text-gray-600">
+                                            {r.visit_date ? (
+                                                <span className="font-medium text-gray-700">
+                                                    {formatDay(r.visit_date)}
+                                                </span>
                                             ) : (
                                                 <span className="text-xs text-gray-300">
                                                     —
@@ -455,6 +455,21 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                             {approving.reference} · Visiting{' '}
                             {approving.contact_person}. Sign off to issue the pass.
                         </p>
+                        {approving.visit_date && (
+                            <p className="mt-1 text-xs text-gray-500">
+                                Appointment date:{' '}
+                                <span className="font-medium text-gray-700">
+                                    {new Date(
+                                        approving.visit_date,
+                                    ).toLocaleDateString([], {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric',
+                                    })}
+                                </span>{' '}
+                                — the badge expires after this day.
+                            </p>
+                        )}
                         {approving.email && (
                             <p className="mt-1 text-xs text-gray-400">
                                 An approval email with their pass link will be sent
@@ -645,6 +660,7 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                                     }
                                     qrToken={viewingPass.visitor?.qr_token}
                                     badgeNumber={viewingPass.visitor?.badge_number}
+                                    visitDate={viewingPass.visit_date}
                                     status="approved"
                                 />
                             </div>
@@ -677,41 +693,6 @@ export default function VisitorRequestsIndex({ requests, filters, counts }) {
                                 </svg>
                                 {saving === 'pdf' ? 'Saving…' : 'Download PDF'}
                             </button>
-                        </div>
-                    </div>
-                )}
-            </Modal>
-
-            {/* Signature preview */}
-            <Modal show={!!preview} onClose={() => setPreview(null)} maxWidth="lg">
-                {preview && (
-                    <div className="p-6">
-                        <div className="flex items-start justify-between">
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                    {preview.name}
-                                </h3>
-                                <p className="text-sm text-gray-500">
-                                    {preview.reference} · Visiting{' '}
-                                    {preview.contact_person}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setPreview(null)}
-                                className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                            >
-                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M18 6 6 18M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="mt-4 flex justify-center rounded-xl border border-gray-200 bg-gray-50 p-6">
-                            <img
-                                src={preview.signature_url}
-                                alt="Signature"
-                                className="max-h-48 object-contain"
-                            />
                         </div>
                     </div>
                 )}

@@ -29,6 +29,7 @@ class Visitor extends Model
         'device_pin',
         'qr_token',
         'status',
+        'visit_date',
         'checked_in_at',
         'checked_out_at',
     ];
@@ -38,10 +39,20 @@ class Visitor extends Model
     protected function casts(): array
     {
         return [
+            'visit_date' => 'date',
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
             'companions' => 'integer',
         ];
+    }
+
+    /**
+     * A dated badge is valid up to and including its appointment day. Once that
+     * day has passed the QR is expired. Walk-ins with no date never expire.
+     */
+    public function isExpired(): bool
+    {
+        return $this->visit_date !== null && today()->greaterThan($this->visit_date);
     }
 
     public function visits(): HasMany
