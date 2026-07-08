@@ -114,7 +114,6 @@ const incidentFormCss = `
 .ir-name .ir-v{display:block;margin-top:16px;}
 .ir-details{height:360px;}
 .ir-details .ir-v{display:block;margin-top:8px;white-space:pre-wrap;font-weight:normal;}
-.ir-details .ir-subject{font-weight:bold;margin-top:6px;}
 .ir-two .ir-v{display:block;margin-top:14px;}
 .ir-indent{padding-left:22px;}
 .ir-control{text-align:right;font-style:italic;font-size:11px;margin-top:6px;}
@@ -196,9 +195,6 @@ function IncidentPrintForm({ report }) {
                     <tr>
                         <td colSpan={4} className="ir-details">
                             <span className="ir-lbl">Details of the Incident</span>
-                            {report.title && (
-                                <div className="ir-subject">{report.title}</div>
-                            )}
                             <span className="ir-v">{report.description}</span>
                         </td>
                     </tr>
