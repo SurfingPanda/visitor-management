@@ -82,7 +82,9 @@ class VisitorRequestController extends Controller
             'contact_person' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255'],
             'company' => ['nullable', 'string', 'max:255'],
-            'signature' => ['required', 'string'],
+            // Base64 data-URL image, capped (~500 KB) so a huge blob can't be
+            // used to abuse storage/memory.
+            'signature' => ['required', 'string', 'starts_with:data:image/', 'max:500000'],
         ]);
 
         $company = $validated['company'] ?? null;
@@ -172,7 +174,7 @@ class VisitorRequestController extends Controller
 
         $validated = $request->validate([
             'approver_name' => ['nullable', 'string', 'max:255'],
-            'approver_signature' => ['required', 'string'],
+            'approver_signature' => ['required', 'string', 'starts_with:data:image/', 'max:500000'],
         ]);
 
         // Name is a display convenience (prefilled on the form); the trustworthy

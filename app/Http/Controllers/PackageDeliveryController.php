@@ -108,7 +108,7 @@ class PackageDeliveryController extends Controller
 
         $validated = $request->validate([
             'received_by_name' => ['nullable', 'string', 'max:255'],
-            'signature' => ['required', 'string'],
+            'signature' => ['required', 'string', 'starts_with:data:image/', 'max:500000'],
         ]);
 
         $signaturePath = $this->storeSignature($validated['signature']);
